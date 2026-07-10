@@ -3,11 +3,7 @@ export const metadata = {
   description: "고구려 카드 수집 RPG",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }) {
   return (
     <html lang="ko">
       <body>{children}</body>
