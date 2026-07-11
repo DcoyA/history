@@ -1150,7 +1150,6 @@ function CardImage({ card, size }) {
     </div>
   )
 }
-`
 
   return (
     <div
