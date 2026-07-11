@@ -8,12 +8,14 @@ export default function Home() {
   const [profile, setProfile] = useState(null)
   const [lessons, setLessons] = useState([])
   const [allCards, setAllCards] = useState([])
+  const [roadmapNodes, setRoadmapNodes] = useState([])
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0)
   const [ownedCards, setOwnedCards] = useState([])
   const [selectedChoice, setSelectedChoice] = useState(null)
   const [resultMessage, setResultMessage] = useState('')
   const [rewardMessage, setRewardMessage] = useState('')
   const [lastRewardCard, setLastRewardCard] = useState(null)
+  const [selectedNode, setSelectedNode] = useState(null)
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [activeTab, setActiveTab] = useState('quiz')
@@ -68,6 +70,7 @@ export default function Home() {
 
     await loadAllCards()
     await loadLessons()
+    await loadRoadmapNodes()
     await loadOwnedCards(currentUser.id)
 
     setLoading(false)
@@ -77,7 +80,7 @@ export default function Home() {
     const { data, error } = await supabase
       .from('cards')
       .select('*')
-      .order('name', { ascending: true })
+      .order('year_start', { ascending: true })
 
     if (error) {
       console.error('전체 카드 조회 실패:', error)
@@ -92,7 +95,7 @@ export default function Home() {
     const { data, error } = await supabase
       .from('lessons')
       .select('*')
-      .order('id', { ascending: true })
+      .order('lesson_code', { ascending: true })
 
     if (error) {
       console.error('퀴즈 조회 실패:', error)
@@ -101,6 +104,21 @@ export default function Home() {
     }
 
     setLessons(data || [])
+  }
+
+  const loadRoadmapNodes = async () => {
+    const { data, error } = await supabase
+      .from('roadmap_nodes')
+      .select('*')
+      .order('y_order', { ascending: true })
+
+    if (error) {
+      console.error('로드맵 조회 실패:', error)
+      setRoadmapNodes([])
+      return
+    }
+
+    setRoadmapNodes(data || [])
   }
 
   const loadOwnedCards = async (userId) => {
@@ -252,6 +270,7 @@ export default function Home() {
 
     await loadOwnedCards(user.id)
     await loadAllCards()
+    await loadRoadmapNodes()
   }
 
   const goNextQuiz = () => {
@@ -292,7 +311,7 @@ export default function Home() {
         <section style={heroStyle}>
           <div style={heroTopStyle}>
             <div>
-              <p style={eyebrowStyle}>고구려 도감</p>
+              <p style={eyebrowStyle}>고구려 퀘스트</p>
               <h1 style={titleStyle}>Hi-Story</h1>
             </div>
 
@@ -304,7 +323,7 @@ export default function Home() {
           </div>
 
           <p style={heroTextStyle}>
-            퀴즈를 풀고 역사 카드를 해금하세요.
+            퀴즈를 풀며 고구려 로드맵과 도감을 완성하세요.
           </p>
 
           {!user ? (
@@ -314,7 +333,7 @@ export default function Home() {
           ) : (
             <>
               <div style={progressHeaderStyle}>
-                <span>도감 완성도</span>
+                <span>고구려 진행도</span>
                 <strong>{collectionRate}%</strong>
               </div>
 
@@ -330,12 +349,12 @@ export default function Home() {
               <div style={miniStatRowStyle}>
                 <div style={miniStatStyle}>
                   <strong>{ownedCount}</strong>
-                  <span>획득</span>
+                  <span>완료</span>
                 </div>
 
                 <div style={miniStatStyle}>
                   <strong>{lockedCards.length}</strong>
-                  <span>미획득</span>
+                  <span>남은 퀘스트</span>
                 </div>
 
                 <div style={miniStatStyle}>
@@ -364,6 +383,19 @@ export default function Home() {
             lastRewardCard={lastRewardCard}
             handleAnswer={handleAnswer}
             goNextQuiz={goNextQuiz}
+          />
+        )}
+
+        {user && activeTab === 'roadmap' && (
+          <RoadmapView
+            roadmapNodes={roadmapNodes}
+            allCards={allCards}
+            ownedCardIds={ownedCardIds}
+            ownedCount={ownedCount}
+            totalCount={totalCount}
+            collectionRate={collectionRate}
+            selectedNode={selectedNode}
+            setSelectedNode={setSelectedNode}
           />
         )}
 
@@ -396,6 +428,14 @@ export default function Home() {
             >
               <span>⚔️</span>
               <small>퀴즈</small>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('roadmap')}
+              style={tabButtonStyle(activeTab === 'roadmap')}
+            >
+              <span>🗺️</span>
+              <small>로드맵</small>
             </button>
 
             <button
@@ -452,6 +492,13 @@ function QuizView({
 
         <span style={pillStyle}>
           {currentLessonIndex + 1} / {lessons.length}
+        </span>
+      </div>
+
+      <div style={questHintStyle}>
+        <strong>현재 퀘스트</strong>
+        <span>
+          정답을 맞히면 연결된 역사 카드가 해금됩니다.
         </span>
       </div>
 
@@ -519,6 +566,12 @@ function QuizView({
               </p>
             )}
 
+            {currentLesson.explanation && resultMessage.includes('정답') && (
+              <p style={explanationStyle}>
+                {currentLesson.explanation}
+              </p>
+            )}
+
             {lastRewardCard && (
               <RewardCard card={lastRewardCard} />
             )}
@@ -532,6 +585,178 @@ function QuizView({
         )}
       </div>
     </section>
+  )
+}
+
+function RoadmapView({
+  roadmapNodes,
+  allCards,
+  ownedCardIds,
+  ownedCount,
+  totalCount,
+  collectionRate,
+  selectedNode,
+  setSelectedNode
+}) {
+  const nodes = roadmapNodes.length > 0
+    ? roadmapNodes
+    : allCards.map((card, index) => ({
+        node_id: card.id,
+        card_id: card.id,
+        label: card.name,
+        era: card.era,
+        category: card.category,
+        roadmap_group: card.roadmap_group || '고구려',
+        year_start: card.year_start,
+        year_end: card.year_end,
+        x_column: (index % 4) + 1,
+        y_order: Math.floor(index / 4) + 1
+      }))
+
+  const maxY = Math.max(...nodes.map((node) => Number(node.y_order || 1)), 1)
+  const mapHeight = maxY * 92 + 110
+  const mapWidth = 392
+
+  const grouped = ['국가 정비', '전성기 확장', '남진과 전성기', '수·당 전쟁', '생활 문화', '예술 문화', '방어 체계']
+
+  return (
+    <section style={contentSectionStyle}>
+      <div style={sectionHeaderStyle}>
+        <div>
+          <p style={eyebrowDarkStyle}>전체 흐름</p>
+          <h2 style={sectionTitleStyle}>고구려 로드맵</h2>
+        </div>
+
+        <span style={pillStyle}>
+          {ownedCount}/{totalCount}
+        </span>
+      </div>
+
+      <div style={roadmapSummaryStyle}>
+        <strong>지금 보이는 것이 이 앱의 핵심 커리큘럼입니다.</strong>
+        <span>
+          퀴즈를 풀면 아래 노드가 하나씩 컬러로 해금됩니다.
+        </span>
+
+        <div style={progressTrackLightStyle}>
+          <div
+            style={{
+              ...progressFillLightStyle,
+              width: `${collectionRate}%`
+            }}
+          />
+        </div>
+      </div>
+
+      <div style={roadmapLegendStyle}>
+        {grouped.map((group) => (
+          <span key={group} style={legendPillStyle}>
+            {group}
+          </span>
+        ))}
+      </div>
+
+      <div style={roadmapScrollStyle}>
+        <div
+          style={{
+            ...roadmapCanvasStyle,
+            width: mapWidth,
+            height: mapHeight
+          }}
+        >
+          {[1, 2, 3, 4].map((column) => (
+            <div
+              key={column}
+              style={{
+                ...roadmapVerticalLineStyle,
+                left: `${(column - 1) * 92 + 48}px`
+              }}
+            />
+          ))}
+
+          {[3, 5, 8, 11].map((row) => (
+            <div
+              key={row}
+              style={{
+                ...roadmapHorizontalLineStyle,
+                top: `${row * 92 - 34}px`
+              }}
+            />
+          ))}
+
+          {nodes.map((node) => {
+            const owned = ownedCardIds.includes(node.card_id)
+            const left = (Number(node.x_column || 1) - 1) * 92 + 8
+            const top = (Number(node.y_order || 1) - 1) * 92 + 22
+
+            return (
+              <button
+                key={node.node_id}
+                onClick={() => setSelectedNode(node)}
+                style={{
+                  ...roadmapNodeStyle,
+                  ...getRoadmapNodeStyle(node, owned),
+                  left,
+                  top
+                }}
+              >
+                <span style={roadmapNodeYearStyle}>
+                  {node.year_start || ''}
+                </span>
+                <strong>{owned ? node.label : getLockedLabel(node)}</strong>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div style={selectedNodeBoxStyle}>
+        {selectedNode ? (
+          <RoadmapNodeDetail
+            node={selectedNode}
+            owned={ownedCardIds.includes(selectedNode.card_id)}
+            card={allCards.find((card) => card.id === selectedNode.card_id)}
+          />
+        ) : (
+          <>
+            <strong>노드를 눌러보세요</strong>
+            <p>
+              각 퀘스트가 어떤 역사 흐름에 속하는지 확인할 수 있습니다.
+            </p>
+          </>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function RoadmapNodeDetail({ node, owned, card }) {
+  return (
+    <div>
+      <div style={nodeDetailTopStyle}>
+        <span style={owned ? unlockedBadgeStyle : lockedBadgeStyle}>
+          {owned ? '해금 완료' : '미해금'}
+        </span>
+
+        <span style={nodeGroupBadgeStyle}>
+          {node.roadmap_group || '고구려'}
+        </span>
+      </div>
+
+      <h3 style={{ margin: '10px 0 6px' }}>
+        {owned ? node.label : '아직 해금되지 않은 퀘스트'}
+      </h3>
+
+      <p style={{ margin: '0 0 8px', color: '#64748b', lineHeight: 1.45 }}>
+        {owned
+          ? card?.flavor_text || '퀴즈를 통해 해금한 고구려 카드입니다.'
+          : `${node.category || '역사'} 카테고리의 고구려 퀘스트입니다. 관련 퀴즈를 풀면 공개됩니다.`}
+      </p>
+
+      <small style={{ color: '#6366f1', fontWeight: 800 }}>
+        {node.year_start ? `${node.year_start}년대 흐름` : '고구려 흐름'} · {node.category || '카드'}
+      </small>
+    </div>
   )
 }
 
@@ -619,7 +844,7 @@ function CollectionView({
       ) : (
         <div style={cardGridStyle}>
           {lockedCards.map((card) => (
-            <LockedCard key={card.id} />
+            <LockedCard key={card.id} card={card} />
           ))}
         </div>
       )}
@@ -681,11 +906,7 @@ function CardImage({ card, size }) {
           height
         }}
       >
-        <img
-          src={card.image_url}
-          alt={card.name}
-          style={cardImageStyle}
-        />
+        {card.image_url}
       </div>
     )
   }
@@ -703,7 +924,7 @@ function CardImage({ card, size }) {
   )
 }
 
-function LockedCard() {
+function LockedCard({ card }) {
   return (
     <div style={lockedCardStyle}>
       <div style={lockedGlowStyle} />
@@ -717,7 +938,7 @@ function LockedCard() {
       </h3>
 
       <p style={lockedTextStyle}>
-        아직 발견하지 못한 고구려 카드
+        {card?.category || '역사'} 카테고리의 미발견 카드
       </p>
 
       <small style={lockedHintStyle}>
@@ -752,7 +973,7 @@ function ProfileView({
         </h2>
 
         <p style={{ margin: 0, color: '#64748b' }}>
-          고구려 도감 수집가
+          고구려 로드맵 탐험가
         </p>
       </div>
 
@@ -769,7 +990,7 @@ function ProfileView({
 
         <div style={profileStatStyle}>
           <strong>{ownedCount}/{totalCount}</strong>
-          <span>도감</span>
+          <span>퀘스트</span>
         </div>
 
         <div style={profileStatStyle}>
@@ -779,9 +1000,9 @@ function ProfileView({
       </div>
 
       <div style={noteBoxStyle}>
-        <strong>다음 목표</strong>
+        <strong>서비스 확장 방향</strong>
         <p>
-          고구려 도감을 모두 채우면 백제, 신라, 고려, 조선 콘텐츠로 확장할 수 있습니다.
+          고구려 로드맵을 완성하면 백제, 신라, 고려, 조선 로드맵으로 확장할 수 있습니다.
         </p>
       </div>
 
@@ -798,7 +1019,77 @@ function getCardIcon(category) {
   if (category === '전쟁') return '⚔️'
   if (category === '건축') return '🏯'
   if (category === '예술') return '🎨'
+  if (category === '복식') return '🥻'
+  if (category === '제도') return '📜'
+  if (category === '사상') return '🪷'
   return '✨'
+}
+
+function getLockedLabel(node) {
+  if (node.category === '인물') return '??? 왕'
+  if (node.category === '전쟁') return '??? 전투'
+  if (node.category === '유물') return '??? 유물'
+  if (node.category === '건축') return '??? 건축'
+  if (node.category === '예술') return '??? 예술'
+  if (node.category === '복식') return '??? 복식'
+  if (node.category === '제도') return '??? 제도'
+  return '????'
+}
+
+function getRoadmapNodeStyle(node, owned) {
+  if (!owned) {
+    return {
+      background: '#4b5563',
+      borderColor: '#6b7280',
+      color: '#e5e7eb'
+    }
+  }
+
+  if (node.category === '인물') {
+    return {
+      background: '#a21caf',
+      borderColor: '#581c87',
+      color: 'white'
+    }
+  }
+
+  if (node.category === '전쟁') {
+    return {
+      background: '#dc2626',
+      borderColor: '#7f1d1d',
+      color: 'white'
+    }
+  }
+
+  if (node.category === '건축' || node.category === '복식') {
+    return {
+      background: '#c2410c',
+      borderColor: '#7c2d12',
+      color: 'white'
+    }
+  }
+
+  if (node.category === '예술' || node.category === '사상') {
+    return {
+      background: '#166534',
+      borderColor: '#052e16',
+      color: 'white'
+    }
+  }
+
+  if (node.category === '유물' || node.category === '제도') {
+    return {
+      background: '#475569',
+      borderColor: '#1e293b',
+      color: 'white'
+    }
+  }
+
+  return {
+    background: '#4338ca',
+    borderColor: '#312e81',
+    color: 'white'
+  }
 }
 
 function getRarityStyle(rarity) {
@@ -860,7 +1151,7 @@ const phoneShellStyle = {
   minHeight: '100vh',
   margin: '0 auto',
   background: '#f8fafc',
-  padding: '18px 16px 92px',
+  padding: '18px 16px 96px',
   boxSizing: 'border-box'
 }
 
@@ -978,6 +1269,18 @@ const pillStyle = {
   fontSize: '13px'
 }
 
+const questHintStyle = {
+  padding: '14px',
+  borderRadius: '18px',
+  background: '#eef2ff',
+  color: '#312e81',
+  marginBottom: '12px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '4px',
+  fontSize: '14px'
+}
+
 const quizCardStyle = {
   padding: '18px',
   borderRadius: '24px',
@@ -1023,6 +1326,16 @@ const resultBoxStyle = {
   padding: '15px',
   borderRadius: '18px',
   border: '1px solid'
+}
+
+const explanationStyle = {
+  margin: '10px 0 0',
+  padding: '12px',
+  borderRadius: '14px',
+  background: 'rgba(255,255,255,0.75)',
+  color: '#334155',
+  lineHeight: 1.45,
+  fontSize: '13px'
 }
 
 const rewardCardStyle = {
@@ -1078,6 +1391,148 @@ const primaryButtonDarkStyle = {
   fontSize: '15px',
   cursor: 'pointer',
   marginTop: '14px'
+}
+
+const roadmapSummaryStyle = {
+  padding: '15px',
+  borderRadius: '20px',
+  background: '#111827',
+  color: 'white',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '7px',
+  marginBottom: '12px',
+  lineHeight: 1.45
+}
+
+const progressTrackLightStyle = {
+  height: '10px',
+  borderRadius: '999px',
+  background: 'rgba(255,255,255,0.18)',
+  overflow: 'hidden',
+  marginTop: '6px'
+}
+
+const progressFillLightStyle = {
+  height: '100%',
+  borderRadius: '999px',
+  background: 'linear-gradient(90deg, #22c55e, #fde047)'
+}
+
+const roadmapLegendStyle = {
+  display: 'flex',
+  gap: '6px',
+  overflowX: 'auto',
+  paddingBottom: '10px',
+  marginBottom: '8px'
+}
+
+const legendPillStyle = {
+  flex: '0 0 auto',
+  padding: '6px 9px',
+  borderRadius: '999px',
+  background: '#eef2ff',
+  color: '#3730a3',
+  fontSize: '12px',
+  fontWeight: 900
+}
+
+const roadmapScrollStyle = {
+  overflowX: 'auto',
+  background: '#020617',
+  borderRadius: '24px',
+  padding: '14px',
+  boxShadow: '0 10px 26px rgba(15, 23, 42, 0.18)'
+}
+
+const roadmapCanvasStyle = {
+  position: 'relative',
+  background: '#020617',
+  borderRadius: '18px',
+  overflow: 'hidden'
+}
+
+const roadmapVerticalLineStyle = {
+  position: 'absolute',
+  top: 20,
+  bottom: 20,
+  width: '3px',
+  background: '#f97316',
+  opacity: 0.9
+}
+
+const roadmapHorizontalLineStyle = {
+  position: 'absolute',
+  left: 34,
+  right: 34,
+  height: '3px',
+  background: '#f97316',
+  opacity: 0.85
+}
+
+const roadmapNodeStyle = {
+  position: 'absolute',
+  width: '80px',
+  minHeight: '54px',
+  borderRadius: '16px',
+  border: '3px solid',
+  padding: '7px 6px',
+  zIndex: 3,
+  fontSize: '11px',
+  fontWeight: 900,
+  lineHeight: 1.25,
+  textAlign: 'center',
+  cursor: 'pointer',
+  boxShadow: '0 8px 18px rgba(0,0,0,0.38)'
+}
+
+const roadmapNodeYearStyle = {
+  display: 'block',
+  fontSize: '9px',
+  opacity: 0.85,
+  marginBottom: '3px'
+}
+
+const selectedNodeBoxStyle = {
+  marginTop: '14px',
+  padding: '16px',
+  borderRadius: '20px',
+  background: 'white',
+  border: '1px solid #e5e7eb',
+  boxShadow: '0 8px 20px rgba(15, 23, 42, 0.06)'
+}
+
+const nodeDetailTopStyle = {
+  display: 'flex',
+  gap: '7px',
+  flexWrap: 'wrap'
+}
+
+const unlockedBadgeStyle = {
+  padding: '5px 8px',
+  borderRadius: '999px',
+  background: '#dcfce7',
+  color: '#166534',
+  fontSize: '12px',
+  fontWeight: 900
+}
+
+const lockedBadgeStyle = {
+  padding: '5px 8px',
+  borderRadius: '999px',
+  background: '#e5e7eb',
+  color: '#374151',
+  fontSize: '12px',
+  fontWeight: 900
+}
+
+const nodeGroupBadgeStyle = {
+  padding: '5px 8px',
+  borderRadius: '999px',
+  background: '#eef2ff',
+  color: '#3730a3',
+  fontSize: '12px',
+  fontWeight: 900
 }
 
 const collectionSummaryStyle = {
@@ -1244,8 +1699,8 @@ const bottomNavStyle = {
   borderRadius: '24px',
   background: 'rgba(17, 24, 39, 0.94)',
   display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
-  gap: '6px',
+  gridTemplateColumns: 'repeat(4, 1fr)',
+  gap: '5px',
   boxShadow: '0 16px 36px rgba(15, 23, 42, 0.38)',
   zIndex: 20
 }
@@ -1253,15 +1708,16 @@ const bottomNavStyle = {
 const tabButtonStyle = (active) => ({
   border: 0,
   borderRadius: '18px',
-  padding: '10px 6px',
+  padding: '9px 4px',
   background: active ? 'white' : 'transparent',
   color: active ? '#111827' : '#d1d5db',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  gap: '3px',
+  gap: '2px',
   fontWeight: 900,
-  cursor: 'pointer'
+  cursor: 'pointer',
+  fontSize: '12px'
 })
 
 const profileCardStyle = {
