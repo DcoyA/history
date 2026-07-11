@@ -3,69 +3,57 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-const dictionaries = {
+const ui = {
   ko: {
-    appTitle: 'Hi-Story',
-    heroLabel: '고구려 퀘스트',
-    heroText: '역사 흐름을 따라가며 언어 카드와 도감을 완성하세요.',
+    title: 'Hi-Story',
+    subtitle: '역사로 언어를 배우는 카드 수집 RPG',
+    start: 'Google로 시작하기',
     progress: '고구려 진행도',
     completed: '완료',
     remaining: '남은 퀘스트',
     total: '전체',
-    googleStart: 'Google로 시작하기',
-
     tabs: {
-      quiz: '퀴즈',
+      quiz: '퀘스트',
       roadmap: '로드맵',
       collection: '도감',
       profile: '내정보'
     },
-
     quiz: {
-      eyebrow: '오늘의 도전',
-      title: '고구려 퀴즈',
-      currentQuest: '현재 퀘스트',
-      questHint: '정답을 맞히면 연결된 역사 카드와 언어 학습 표현이 해금됩니다.',
-      question: '문제',
-      next: '다음 문제로',
+      eyebrow: '오늘의 역사 영어',
+      title: '고구려 퀘스트',
+      hint: '역사 퀴즈를 풀면 카드와 학습 표현이 해금됩니다.',
+      question: '역사 퀴즈',
       correct: '정답입니다!',
       wrong: '오답입니다',
-      tryAgain: '괜찮습니다. 다시 골라보세요.',
+      tryAgain: '다시 골라보세요.',
+      next: '다음 퀘스트',
+      reward: '획득 카드',
       newCard: '새 카드 획득',
-      countUp: '카드 수량이 증가했습니다.',
-      reward: '획득 보상',
+      countUp: '카드 수량 증가',
       rewardError: '보상 카드 정보를 불러오지 못했습니다.',
-      cardError: '카드 확인 중 오류가 발생했습니다.',
       saveError: '카드 저장 중 오류가 발생했습니다.'
     },
-
     roadmap: {
-      eyebrow: '전체 흐름',
+      eyebrow: '학습 여정',
       title: '고구려 로드맵',
-      summaryTitle: '이 앱의 핵심 커리큘럼입니다.',
-      summaryText: '퀴즈를 풀면 아래 역사 노드가 하나씩 컬러로 해금됩니다.',
-      tapNode: '노드를 눌러보세요',
-      tapNodeDesc: '각 퀘스트가 어떤 역사 흐름에 속하는지 확인할 수 있습니다.',
+      desc: '퀴즈를 풀수록 역사 노드가 해금됩니다.',
+      tap: '노드를 눌러보세요',
       unlocked: '해금 완료',
       locked: '미해금',
-      lockedQuest: '아직 해금되지 않은 퀘스트',
-      yearFlow: '년대 흐름'
+      lockedQuest: '아직 해금되지 않은 퀘스트'
     },
-
     collection: {
-      eyebrow: '수집 현황',
+      eyebrow: '카드 도감',
       title: '내 도감',
       owned: '획득한 카드',
       locked: '미획득 카드',
       empty: '아직 획득한 카드가 없습니다.',
       complete: '고구려 도감을 모두 완성했습니다!',
       undiscovered: '미발견 카드',
-      unlockHint: '퀴즈를 풀어 해금',
-      acquired: '획득',
-      undiscoveredCount: '미발견'
+      unlockHint: '퀴즈를 풀어 해금'
     },
-
     profile: {
+      title: '내정보',
       explorer: '고구려 로드맵 탐험가',
       level: '레벨',
       exp: '경험치',
@@ -73,84 +61,63 @@ const dictionaries = {
       completion: '완성도',
       appLanguage: '앱 언어',
       studyLanguage: '학습 언어',
-      studyLanguageValue: 'English',
-      expansionTitle: '서비스 확장 방향',
-      expansionText: '고구려 로드맵을 완성하면 백제, 신라, 고려, 조선 로드맵으로 확장할 수 있습니다.',
       logout: '로그아웃'
     },
-
     status: {
       loading: '불러오는 중...',
-      userLoadFail: '사용자 정보를 불러오지 못했습니다.',
-      profileSaveFail: '프로필 저장에 실패했습니다.',
-      cardsLoadFail: '전체 카드 정보를 불러오지 못했습니다.',
-      ownedCardsLoadFail: '보유 카드 정보를 불러오지 못했습니다.',
-      lessonLoadFail: '퀴즈 정보를 불러오지 못했습니다.'
+      noQuiz: '등록된 퀴즈가 없습니다.'
     }
   },
-
   en: {
-    appTitle: 'Hi-Story',
-    heroLabel: 'Goguryeo Quest',
-    heroText: 'Follow historical milestones and unlock language learning cards.',
+    title: 'Hi-Story',
+    subtitle: 'Learn languages through history cards',
+    start: 'Continue with Google',
     progress: 'Goguryeo Progress',
     completed: 'Done',
     remaining: 'Quests Left',
     total: 'Total',
-    googleStart: 'Continue with Google',
-
     tabs: {
-      quiz: 'Quiz',
+      quiz: 'Quest',
       roadmap: 'Roadmap',
       collection: 'Cards',
       profile: 'Profile'
     },
-
     quiz: {
-      eyebrow: "Today's Challenge",
-      title: 'Goguryeo Quiz',
-      currentQuest: 'Current Quest',
-      questHint: 'Answer correctly to unlock a history card and a language expression.',
-      question: 'Question',
-      next: 'Next Question',
+      eyebrow: "Today's History English",
+      title: 'Goguryeo Quest',
+      hint: 'Answer history quizzes to unlock cards and language expressions.',
+      question: 'History Quiz',
       correct: 'Correct!',
       wrong: 'Not quite',
-      tryAgain: 'No worries. Try again.',
-      newCard: 'New card unlocked',
-      countUp: 'Card count increased.',
-      reward: 'Reward',
+      tryAgain: 'Try again.',
+      next: 'Next Quest',
+      reward: 'Reward Card',
+      newCard: 'New Card Unlocked',
+      countUp: 'Card Count Increased',
       rewardError: 'Could not load the reward card.',
-      cardError: 'There was an error checking the card.',
       saveError: 'There was an error saving the card.'
     },
-
     roadmap: {
-      eyebrow: 'Full Journey',
+      eyebrow: 'Learning Journey',
       title: 'Goguryeo Roadmap',
-      summaryTitle: 'This is the core learning journey.',
-      summaryText: 'Each historical node is unlocked as you answer quizzes.',
-      tapNode: 'Tap a node',
-      tapNodeDesc: 'See how each quest connects to the historical flow.',
+      desc: 'Historical nodes unlock as you answer quizzes.',
+      tap: 'Tap a node',
       unlocked: 'Unlocked',
       locked: 'Locked',
-      lockedQuest: 'Locked quest',
-      yearFlow: 's flow'
+      lockedQuest: 'Locked Quest'
     },
-
     collection: {
-      eyebrow: 'Collection',
+      eyebrow: 'Card Collection',
       title: 'My Cards',
       owned: 'Unlocked Cards',
       locked: 'Locked Cards',
       empty: 'You have not unlocked any cards yet.',
       complete: 'You completed the Goguryeo collection!',
       undiscovered: 'Undiscovered Card',
-      unlockHint: 'Unlock through quizzes',
-      acquired: 'Unlocked',
-      undiscoveredCount: 'Locked'
+      unlockHint: 'Unlock through quizzes'
     },
-
     profile: {
+      title: 'Profile',
       explorer: 'Goguryeo Roadmap Explorer',
       level: 'Level',
       exp: 'EXP',
@@ -158,50 +125,94 @@ const dictionaries = {
       completion: 'Completion',
       appLanguage: 'App Language',
       studyLanguage: 'Study Language',
-      studyLanguageValue: 'English',
-      expansionTitle: 'Expansion Plan',
-      expansionText: 'After Goguryeo, this can expand to Baekje, Silla, Goryeo, and Joseon.',
       logout: 'Log out'
     },
-
     status: {
       loading: 'Loading...',
-      userLoadFail: 'Could not load user information.',
-      profileSaveFail: 'Could not save your profile.',
-      cardsLoadFail: 'Could not load card data.',
-      ownedCardsLoadFail: 'Could not load your cards.',
-      lessonLoadFail: 'Could not load quiz data.'
+      noQuiz: 'No quiz has been added yet.'
     }
   }
 }
 
-function getText(language) {
-  return dictionaries[language] || dictionaries.ko
+function pick(value, fallback) {
+  return value || fallback || ''
+}
+
+function cardName(card, lang) {
+  if (!card) return ''
+  return lang === 'en' ? pick(card.name_en, card.name) : card.name
+}
+
+function cardEra(card, lang) {
+  if (!card) return ''
+  return lang === 'en' ? pick(card.era_en, card.era) : card.era
+}
+
+function cardCategory(card, lang) {
+  if (!card) return ''
+  return lang === 'en' ? pick(card.category_en, card.category) : card.category
+}
+
+function cardFlavor(card, lang) {
+  if (!card) return ''
+  return lang === 'en' ? pick(card.flavor_text_en, card.flavor_text) : card.flavor_text
+}
+
+function lessonQuestion(lesson, lang) {
+  if (!lesson) return ''
+  return lang === 'en' ? pick(lesson.question_en, lesson.question) : lesson.question
+}
+
+function lessonChoice(lesson, number, lang) {
+  if (!lesson) return ''
+  const ko = lesson[`choice${number}`]
+  const en = lesson[`choice${number}_en`]
+  return lang === 'en' ? pick(en, ko) : ko
+}
+
+function lessonExplanation(lesson, lang) {
+  if (!lesson) return ''
+  return lang === 'en' ? pick(lesson.explanation_en, lesson.explanation) : lesson.explanation
+}
+
+function nodeLabel(node, lang) {
+  if (!node) return ''
+  return lang === 'en' ? pick(node.label_en, node.label) : node.label
+}
+
+function nodeCategory(node, lang) {
+  if (!node) return ''
+  return lang === 'en' ? pick(node.category_en, node.category) : node.category
+}
+
+function nodeGroup(node, lang) {
+  if (!node) return ''
+  return lang === 'en' ? pick(node.roadmap_group_en, node.roadmap_group) : node.roadmap_group
 }
 
 export default function Home() {
   const [appLanguage, setAppLanguage] = useState('ko')
-  const t = getText(appLanguage)
+  const t = ui[appLanguage] || ui.ko
 
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [lessons, setLessons] = useState([])
   const [allCards, setAllCards] = useState([])
   const [roadmapNodes, setRoadmapNodes] = useState([])
-  const [currentLessonIndex, setCurrentLessonIndex] = useState(0)
   const [ownedCards, setOwnedCards] = useState([])
+  const [currentLessonIndex, setCurrentLessonIndex] = useState(0)
   const [selectedChoice, setSelectedChoice] = useState(null)
   const [resultMessage, setResultMessage] = useState('')
   const [rewardMessage, setRewardMessage] = useState('')
   const [lastRewardCard, setLastRewardCard] = useState(null)
   const [selectedNode, setSelectedNode] = useState(null)
+  const [activeTab, setActiveTab] = useState('quiz')
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
-  const [activeTab, setActiveTab] = useState('quiz')
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem('hiStoryAppLanguage')
-    if (savedLanguage) {
+    if (savedLanguage === 'ko' || savedLanguage === 'en') {
       setAppLanguage(savedLanguage)
     }
 
@@ -209,9 +220,9 @@ export default function Home() {
   }, [])
 
   const changeAppLanguage = () => {
-    const nextLanguage = appLanguage === 'ko' ? 'en' : 'ko'
-    setAppLanguage(nextLanguage)
-    localStorage.setItem('hiStoryAppLanguage', nextLanguage)
+    const next = appLanguage === 'ko' ? 'en' : 'ko'
+    setAppLanguage(next)
+    localStorage.setItem('hiStoryAppLanguage', next)
   }
 
   const loadData = async () => {
@@ -221,8 +232,8 @@ export default function Home() {
     const { data: userData, error: userError } = await supabase.auth.getUser()
 
     if (userError) {
-      console.error('사용자 조회 실패:', userError)
-      setErrorMessage(t.status.userLoadFail)
+      console.error(userError)
+      setErrorMessage('사용자 정보를 불러오지 못했습니다.')
       setLoading(false)
       return
     }
@@ -251,10 +262,7 @@ export default function Home() {
       .select()
       .single()
 
-    if (profileError) {
-      console.error('프로필 저장 실패:', profileError)
-      setErrorMessage(t.status.profileSaveFail)
-    } else {
+    if (!profileError) {
       setProfile(savedProfile)
     }
 
@@ -273,8 +281,8 @@ export default function Home() {
       .order('year_start', { ascending: true })
 
     if (error) {
-      console.error('전체 카드 조회 실패:', error)
-      setErrorMessage(t.status.cardsLoadFail)
+      console.error(error)
+      setErrorMessage('카드 정보를 불러오지 못했습니다.')
       return
     }
 
@@ -288,8 +296,8 @@ export default function Home() {
       .order('lesson_code', { ascending: true })
 
     if (error) {
-      console.error('퀴즈 조회 실패:', error)
-      setErrorMessage(t.status.lessonLoadFail)
+      console.error(error)
+      setErrorMessage('퀴즈 정보를 불러오지 못했습니다.')
       return
     }
 
@@ -303,7 +311,7 @@ export default function Home() {
       .order('y_order', { ascending: true })
 
     if (error) {
-      console.error('로드맵 조회 실패:', error)
+      console.error(error)
       setRoadmapNodes([])
       return
     }
@@ -319,8 +327,8 @@ export default function Home() {
       .order('obtained_at', { ascending: false })
 
     if (userCardsError) {
-      console.error('보유 카드 조회 실패:', userCardsError)
-      setErrorMessage(t.status.ownedCardsLoadFail)
+      console.error(userCardsError)
+      setErrorMessage('보유 카드 정보를 불러오지 못했습니다.')
       return
     }
 
@@ -337,8 +345,8 @@ export default function Home() {
       .in('id', cardIds)
 
     if (cardsError) {
-      console.error('카드 상세 조회 실패:', cardsError)
-      setErrorMessage(t.status.ownedCardsLoadFail)
+      console.error(cardsError)
+      setErrorMessage('카드 상세 정보를 불러오지 못했습니다.')
       return
     }
 
@@ -396,7 +404,7 @@ export default function Home() {
       .single()
 
     if (rewardCardError) {
-      console.error('보상 카드 조회 실패:', rewardCardError)
+      console.error(rewardCardError)
       setResultMessage(t.quiz.correct)
       setRewardMessage(t.quiz.rewardError)
       return
@@ -412,9 +420,9 @@ export default function Home() {
       .maybeSingle()
 
     if (existingError) {
-      console.error('기존 카드 조회 실패:', existingError)
+      console.error(existingError)
       setResultMessage(t.quiz.correct)
-      setRewardMessage(t.quiz.cardError)
+      setRewardMessage(t.quiz.saveError)
       return
     }
 
@@ -429,14 +437,14 @@ export default function Home() {
         .eq('id', existingCard.id)
 
       if (updateError) {
-        console.error('카드 수량 증가 실패:', updateError)
+        console.error(updateError)
         setResultMessage(t.quiz.correct)
         setRewardMessage(t.quiz.saveError)
         return
       }
 
       setResultMessage(t.quiz.correct)
-      setRewardMessage(`${rewardCard.name} ${t.quiz.countUp} x${nextCount}`)
+      setRewardMessage(`${cardName(rewardCard, appLanguage)} ${t.quiz.countUp} x${nextCount}`)
     } else {
       const { error: insertError } = await supabase
         .from('user_cards')
@@ -448,14 +456,14 @@ export default function Home() {
         })
 
       if (insertError) {
-        console.error('카드 지급 실패:', insertError)
+        console.error(insertError)
         setResultMessage(t.quiz.correct)
         setRewardMessage(t.quiz.saveError)
         return
       }
 
       setResultMessage(t.quiz.correct)
-      setRewardMessage(`${t.quiz.newCard}: ${rewardCard.name}`)
+      setRewardMessage(`${t.quiz.newCard}: ${cardName(rewardCard, appLanguage)}`)
     }
 
     await loadOwnedCards(user.id)
@@ -480,7 +488,7 @@ export default function Home() {
     return (
       <main style={pageStyle}>
         <div style={phoneShellStyle}>
-          <h1 style={{ marginTop: 40 }}>{t.appTitle}</h1>
+          <h1 style={{ marginTop: 40 }}>{t.title}</h1>
           <p>{t.status.loading}</p>
         </div>
       </main>
@@ -501,11 +509,11 @@ export default function Home() {
         <section style={heroStyle}>
           <div style={heroTopStyle}>
             <div>
-              <p style={eyebrowStyle}>{t.heroLabel}</p>
-              <h1 style={titleStyle}>{t.appTitle}</h1>
+              <p style={heroEyebrowStyle}>LANGUAGE THROUGH HISTORY</p>
+              <h1 style={titleStyle}>{t.title}</h1>
             </div>
 
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <div style={heroButtonGroupStyle}>
               <button onClick={changeAppLanguage} style={languageButtonStyle}>
                 🌐 {appLanguage.toUpperCase()}
               </button>
@@ -519,12 +527,12 @@ export default function Home() {
           </div>
 
           <p style={heroTextStyle}>
-            {t.heroText}
+            {t.subtitle}
           </p>
 
           {!user ? (
-            <button onClick={login} style={primaryButtonStyle}>
-              {t.googleStart}
+            <button onClick={login} style={goldButtonStyle}>
+              {t.start}
             </button>
           ) : (
             <>
@@ -571,6 +579,7 @@ export default function Home() {
         {user && activeTab === 'quiz' && (
           <QuizView
             t={t}
+            appLanguage={appLanguage}
             currentLesson={currentLesson}
             currentLessonIndex={currentLessonIndex}
             lessons={lessons}
@@ -586,6 +595,7 @@ export default function Home() {
         {user && activeTab === 'roadmap' && (
           <RoadmapView
             t={t}
+            appLanguage={appLanguage}
             roadmapNodes={roadmapNodes}
             allCards={allCards}
             ownedCardIds={ownedCardIds}
@@ -600,6 +610,7 @@ export default function Home() {
         {user && activeTab === 'collection' && (
           <CollectionView
             t={t}
+            appLanguage={appLanguage}
             ownedCards={ownedCards}
             lockedCards={lockedCards}
             ownedCount={ownedCount}
@@ -664,6 +675,7 @@ export default function Home() {
 
 function QuizView({
   t,
+  appLanguage,
   currentLesson,
   currentLessonIndex,
   lessons,
@@ -678,56 +690,64 @@ function QuizView({
     return (
       <section style={contentSectionStyle}>
         <h2>{t.quiz.title}</h2>
-        <p>{t.status.lessonLoadFail}</p>
+        <p>{t.status.noQuiz}</p>
       </section>
     )
   }
 
   const answeredCorrectly = resultMessage === t.quiz.correct
+  const currentAnswer = Number(currentLesson.answer)
 
   return (
     <section style={contentSectionStyle}>
       <div style={sectionHeaderStyle}>
         <div>
-          <p style={eyebrowDarkStyle}>{t.quiz.eyebrow}</p>
+          <p style={eyebrowGoldStyle}>{t.quiz.eyebrow}</p>
           <h2 style={sectionTitleStyle}>{t.quiz.title}</h2>
         </div>
 
-        <span style={pillStyle}>
+        <span style={darkPillStyle}>
           {currentLessonIndex + 1} / {lessons.length}
         </span>
       </div>
 
+      <div style={languageLessonBoxStyle}>
+        <strong>History Phrase</strong>
+        <p>
+          {appLanguage === 'en'
+            ? lessonQuestion(currentLesson, 'en')
+            : lessonQuestion(currentLesson, 'ko')}
+        </p>
+      </div>
+
       <div style={questHintStyle}>
-        <strong>{t.quiz.currentQuest}</strong>
-        <span>{t.quiz.questHint}</span>
+        {t.quiz.hint}
       </div>
 
       <div style={quizCardStyle}>
         <p style={quizLabelStyle}>{t.quiz.question}</p>
-        <h3 style={questionStyle}>{currentLesson.question}</h3>
+        <h3 style={questionStyle}>{lessonQuestion(currentLesson, appLanguage)}</h3>
 
         <div style={choiceGridStyle}>
           {[1, 2, 3, 4].map((number) => {
-            const choiceText = currentLesson[`choice${number}`]
             const isSelected = selectedChoice === number
-            const isCorrectChoice = number === currentLesson.answer
+            const isCorrectChoice = number === currentAnswer
 
             let style = choiceButtonStyle
 
             if (isSelected) {
               style = {
                 ...style,
-                border: '2px solid #111827',
-                background: '#eef2ff'
+                border: '1px solid #d6b35a',
+                background: '#1e293b'
               }
             }
 
             if (answeredCorrectly && isCorrectChoice) {
               style = {
                 ...style,
-                border: '2px solid #22c55e',
-                background: '#dcfce7'
+                border: '1px solid #22c55e',
+                background: '#064e3b'
               }
             }
 
@@ -739,7 +759,7 @@ function QuizView({
                 style={style}
               >
                 <b>{number}</b>
-                <span>{choiceText}</span>
+                <span>{lessonChoice(currentLesson, number, appLanguage)}</span>
               </button>
             )
           })}
@@ -749,15 +769,10 @@ function QuizView({
           <div
             style={{
               ...resultBoxStyle,
-              background: answeredCorrectly ? '#ecfdf5' : '#fff1f2',
-              borderColor: answeredCorrectly ? '#86efac' : '#fecdd3'
+              borderColor: answeredCorrectly ? '#22c55e' : '#ef4444'
             }}
           >
-            <strong
-              style={{
-                color: answeredCorrectly ? '#15803d' : '#be123c'
-              }}
-            >
+            <strong style={{ color: answeredCorrectly ? '#86efac' : '#fecaca' }}>
               {resultMessage}
             </strong>
 
@@ -767,20 +782,20 @@ function QuizView({
               </p>
             )}
 
-            {currentLesson.explanation && answeredCorrectly && (
+            {answeredCorrectly && lessonExplanation(currentLesson, appLanguage) && (
               <p style={explanationStyle}>
-                {currentLesson.explanation}
+                {lessonExplanation(currentLesson, appLanguage)}
               </p>
             )}
 
             {lastRewardCard && (
-              <RewardCard t={t} card={lastRewardCard} />
+              <RewardCard t={t} appLanguage={appLanguage} card={lastRewardCard} />
             )}
           </div>
         )}
 
         {answeredCorrectly && (
-          <button onClick={goNextQuiz} style={primaryButtonDarkStyle}>
+          <button onClick={goNextQuiz} style={goldButtonStyle}>
             {t.quiz.next}
           </button>
         )}
@@ -791,6 +806,7 @@ function QuizView({
 
 function RoadmapView({
   t,
+  appLanguage,
   roadmapNodes,
   allCards,
   ownedCardIds,
@@ -806,11 +822,12 @@ function RoadmapView({
         node_id: card.id,
         card_id: card.id,
         label: card.name,
-        era: card.era,
+        label_en: card.name_en,
         category: card.category,
-        roadmap_group: card.roadmap_group || '고구려',
+        category_en: card.category_en,
+        roadmap_group: card.roadmap_group,
+        roadmap_group_en: card.roadmap_group_en,
         year_start: card.year_start,
-        year_end: card.year_end,
         x_column: (index % 4) + 1,
         y_order: Math.floor(index / 4) + 1
       }))
@@ -819,29 +836,34 @@ function RoadmapView({
   const mapHeight = maxY * 92 + 110
   const mapWidth = 392
 
-  const grouped = ['국가 정비', '전성기 확장', '남진과 전성기', '수·당 전쟁', '생활 문화', '예술 문화', '방어 체계']
+  const groups = [
+    appLanguage === 'en' ? 'State Building' : '국가 정비',
+    appLanguage === 'en' ? 'Golden Age' : '전성기 확장',
+    appLanguage === 'en' ? 'Southern Expansion' : '남진과 전성기',
+    appLanguage === 'en' ? 'Sui-Tang Wars' : '수·당 전쟁',
+    appLanguage === 'en' ? 'Daily Life' : '생활 문화'
+  ]
 
   return (
     <section style={contentSectionStyle}>
       <div style={sectionHeaderStyle}>
         <div>
-          <p style={eyebrowDarkStyle}>{t.roadmap.eyebrow}</p>
+          <p style={eyebrowGoldStyle}>{t.roadmap.eyebrow}</p>
           <h2 style={sectionTitleStyle}>{t.roadmap.title}</h2>
         </div>
 
-        <span style={pillStyle}>
+        <span style={darkPillStyle}>
           {ownedCount}/{totalCount}
         </span>
       </div>
 
       <div style={roadmapSummaryStyle}>
-        <strong>{t.roadmap.summaryTitle}</strong>
-        <span>{t.roadmap.summaryText}</span>
+        <strong>{t.roadmap.desc}</strong>
 
-        <div style={progressTrackLightStyle}>
+        <div style={progressTrackStyle}>
           <div
             style={{
-              ...progressFillLightStyle,
+              ...progressFillStyle,
               width: `${collectionRate}%`
             }}
           />
@@ -849,7 +871,7 @@ function RoadmapView({
       </div>
 
       <div style={roadmapLegendStyle}>
-        {grouped.map((group) => (
+        {groups.map((group) => (
           <span key={group} style={legendPillStyle}>
             {group}
           </span>
@@ -903,7 +925,9 @@ function RoadmapView({
                 <span style={roadmapNodeYearStyle}>
                   {node.year_start || ''}
                 </span>
-                <strong>{owned ? node.label : getLockedLabel(node)}</strong>
+                <strong>
+                  {owned ? nodeLabel(node, appLanguage) : getLockedLabel(node, appLanguage)}
+                </strong>
               </button>
             )
           })}
@@ -914,14 +938,15 @@ function RoadmapView({
         {selectedNode ? (
           <RoadmapNodeDetail
             t={t}
+            appLanguage={appLanguage}
             node={selectedNode}
             owned={ownedCardIds.includes(selectedNode.card_id)}
             card={allCards.find((card) => card.id === selectedNode.card_id)}
           />
         ) : (
           <>
-            <strong>{t.roadmap.tapNode}</strong>
-            <p>{t.roadmap.tapNodeDesc}</p>
+            <strong>{t.roadmap.tap}</strong>
+            <p style={{ color: '#94a3b8' }}>{t.roadmap.desc}</p>
           </>
         )}
       </div>
@@ -929,7 +954,7 @@ function RoadmapView({
   )
 }
 
-function RoadmapNodeDetail({ t, node, owned, card }) {
+function RoadmapNodeDetail({ t, appLanguage, node, owned, card }) {
   return (
     <div>
       <div style={nodeDetailTopStyle}>
@@ -938,28 +963,24 @@ function RoadmapNodeDetail({ t, node, owned, card }) {
         </span>
 
         <span style={nodeGroupBadgeStyle}>
-          {node.roadmap_group || '고구려'}
+          {nodeGroup(node, appLanguage) || 'Goguryeo'}
         </span>
       </div>
 
       <h3 style={{ margin: '10px 0 6px' }}>
-        {owned ? node.label : t.roadmap.lockedQuest}
+        {owned ? nodeLabel(node, appLanguage) : t.roadmap.lockedQuest}
       </h3>
 
-      <p style={{ margin: '0 0 8px', color: '#64748b', lineHeight: 1.45 }}>
+      <p style={{ margin: '0 0 8px', color: '#94a3b8', lineHeight: 1.45 }}>
         {owned
-          ? card?.flavor_text || '퀴즈를 통해 해금한 고구려 카드입니다.'
-          : `${node.category || '역사'} 카테고리의 고구려 퀘스트입니다. 관련 퀴즈를 풀면 공개됩니다.`}
+          ? cardFlavor(card, appLanguage)
+          : `${nodeCategory(node, appLanguage)} · ${t.collection.unlockHint}`}
       </p>
-
-      <small style={{ color: '#6366f1', fontWeight: 800 }}>
-        {node.year_start ? `${node.year_start}${t.roadmap.yearFlow}` : 'Goguryeo'} · {node.category || '카드'}
-      </small>
     </div>
   )
 }
 
-function RewardCard({ t, card }) {
+function RewardCard({ t, appLanguage, card }) {
   const rarityStyle = getRarityStyle(card?.rarity)
 
   return (
@@ -975,16 +996,16 @@ function RewardCard({ t, card }) {
       <CardImage card={card} size="large" />
 
       <h3 style={{ margin: '10px 0 4px', fontSize: 22 }}>
-        {card?.name}
+        {cardName(card, appLanguage)}
       </h3>
 
-      <p style={{ margin: '0 0 8px', color: '#92400e', fontSize: 13 }}>
-        {card?.era || '고구려'} · {card?.category || '카드'}
+      <p style={{ margin: '0 0 8px', color: '#d6b35a', fontSize: 13 }}>
+        {cardEra(card, appLanguage)} · {cardCategory(card, appLanguage)}
       </p>
 
-      {card?.flavor_text && (
+      {cardFlavor(card, appLanguage) && (
         <p style={rewardFlavorStyle}>
-          {card.flavor_text}
+          {cardFlavor(card, appLanguage)}
         </p>
       )}
     </div>
@@ -993,6 +1014,7 @@ function RewardCard({ t, card }) {
 
 function CollectionView({
   t,
+  appLanguage,
   ownedCards,
   lockedCards,
   ownedCount,
@@ -1003,22 +1025,18 @@ function CollectionView({
     <section style={contentSectionStyle}>
       <div style={sectionHeaderStyle}>
         <div>
-          <p style={eyebrowDarkStyle}>{t.collection.eyebrow}</p>
+          <p style={eyebrowGoldStyle}>{t.collection.eyebrow}</p>
           <h2 style={sectionTitleStyle}>{t.collection.title}</h2>
         </div>
 
-        <span style={pillStyle}>
+        <span style={darkPillStyle}>
           {collectionRate}%
         </span>
       </div>
 
       <div style={collectionSummaryStyle}>
-        <strong>
-          {ownedCount}{t.collection.acquired}
-        </strong>
-        <span>
-          {t.total} {totalCount} · {t.collection.undiscoveredCount} {lockedCards.length}
-        </span>
+        <strong>{ownedCount} / {totalCount}</strong>
+        <span>{t.collection.locked}: {lockedCards.length}</span>
       </div>
 
       <h3 style={subTitleStyle}>{t.collection.owned}</h3>
@@ -1030,7 +1048,11 @@ function CollectionView({
       ) : (
         <div style={cardGridStyle}>
           {ownedCards.map((item) => (
-            <OwnedCard key={item.id} item={item} />
+            <OwnedCard
+              key={item.id}
+              item={item}
+              appLanguage={appLanguage}
+            />
           ))}
         </div>
       )}
@@ -1044,7 +1066,12 @@ function CollectionView({
       ) : (
         <div style={cardGridStyle}>
           {lockedCards.map((card) => (
-            <LockedCard key={card.id} t={t} card={card} />
+            <LockedCard
+              key={card.id}
+              t={t}
+              appLanguage={appLanguage}
+              card={card}
+            />
           ))}
         </div>
       )}
@@ -1052,7 +1079,7 @@ function CollectionView({
   )
 }
 
-function OwnedCard({ item }) {
+function OwnedCard({ item, appLanguage }) {
   const card = item.card
   const rarityStyle = getRarityStyle(card?.rarity)
 
@@ -1077,16 +1104,16 @@ function OwnedCard({ item }) {
       <CardImage card={card} size="normal" />
 
       <h3 style={ownedCardTitleStyle}>
-        {card?.name || '이름 없는 카드'}
+        {cardName(card, appLanguage)}
       </h3>
 
       <p style={cardMetaStyle}>
-        {card?.era || '고구려'} · {card?.category || '카드'}
+        {cardEra(card, appLanguage)} · {cardCategory(card, appLanguage)}
       </p>
 
-      {card?.flavor_text && (
+      {cardFlavor(card, appLanguage) && (
         <p style={flavorTextStyle}>
-          {card.flavor_text}
+          {cardFlavor(card, appLanguage)}
         </p>
       )}
     </div>
@@ -1095,7 +1122,7 @@ function OwnedCard({ item }) {
 
 function CardImage({ card, size }) {
   const isLarge = size === 'large'
-  const height = isLarge ? 148 : 108
+  const height = isLarge ? 158 : 112
   const fontSize = isLarge ? 52 : 42
 
   if (card?.image_url) {
@@ -1124,7 +1151,7 @@ function CardImage({ card, size }) {
   )
 }
 
-function LockedCard({ t, card }) {
+function LockedCard({ t, appLanguage, card }) {
   return (
     <div style={lockedCardStyle}>
       <div style={lockedGlowStyle} />
@@ -1138,7 +1165,7 @@ function LockedCard({ t, card }) {
       </h3>
 
       <p style={lockedTextStyle}>
-        {card?.category || t.collection.undiscovered} · {t.collection.undiscovered}
+        {cardCategory(card, appLanguage) || t.collection.undiscovered}
       </p>
 
       <small style={lockedHintStyle}>
@@ -1175,7 +1202,7 @@ function ProfileView({
           {nickname}
         </h2>
 
-        <p style={{ margin: 0, color: '#64748b' }}>
+        <p style={{ margin: 0, color: '#94a3b8' }}>
           {t.profile.explorer}
         </p>
       </div>
@@ -1203,38 +1230,19 @@ function ProfileView({
       </div>
 
       <div style={settingsBoxStyle}>
-        <div style={settingRowStyle}>
-          <div>
-            <strong>{t.profile.appLanguage}</strong>
-            <p style={settingDescStyle}>
-              {appLanguage === 'ko' ? '한국어' : 'English'}
-            </p>
-          </div>
-
-          <button onClick={changeAppLanguage} style={smallButtonStyle}>
-            🌐 {appLanguage === 'ko' ? 'EN' : 'KO'}
+        <div>
+          <strong>{t.profile.appLanguage}</strong>
+          <button onClick={changeAppLanguage} style={smallGoldButtonStyle}>
+            🌐 {appLanguage === 'ko' ? '한국어 → English' : 'English → 한국어'}
           </button>
         </div>
 
-        <div style={settingRowStyle}>
-          <div>
-            <strong>{t.profile.studyLanguage}</strong>
-            <p style={settingDescStyle}>
-              {t.profile.studyLanguageValue}
-            </p>
-          </div>
-
-          <span style={comingSoonBadgeStyle}>
-            MVP
-          </span>
+        <div>
+          <strong>{t.profile.studyLanguage}</strong>
+          <p style={{ margin: '6px 0 0', color: '#94a3b8' }}>
+            English
+          </p>
         </div>
-      </div>
-
-      <div style={noteBoxStyle}>
-        <strong>{t.profile.expansionTitle}</strong>
-        <p>
-          {t.profile.expansionText}
-        </p>
       </div>
 
       <button onClick={logout} style={logoutButtonStyle}>
@@ -1256,38 +1264,51 @@ function getCardIcon(category) {
   return '✨'
 }
 
-function getLockedLabel(node) {
-  if (node.category === '인물') return '??? 왕'
-  if (node.category === '전쟁') return '??? 전투'
-  if (node.category === '유물') return '??? 유물'
-  if (node.category === '건축') return '??? 건축'
-  if (node.category === '예술') return '??? 예술'
-  if (node.category === '복식') return '??? 복식'
-  if (node.category === '제도') return '??? 제도'
+function getLockedLabel(node, lang) {
+  const category = nodeCategory(node, lang)
+
+  if (lang === 'en') {
+    if (category === 'Figure') return '??? Figure'
+    if (category === 'War') return '??? Battle'
+    if (category === 'Artifact') return '??? Artifact'
+    if (category === 'Architecture') return '??? Building'
+    if (category === 'Art') return '??? Art'
+    if (category === 'Clothing') return '??? Clothing'
+    if (category === 'Institution') return '??? System'
+    return '????'
+  }
+
+  if (category === '인물') return '??? 왕'
+  if (category === '전쟁') return '??? 전투'
+  if (category === '유물') return '??? 유물'
+  if (category === '건축') return '??? 건축'
+  if (category === '예술') return '??? 예술'
+  if (category === '복식') return '??? 복식'
+  if (category === '제도') return '??? 제도'
   return '????'
 }
 
 function getRoadmapNodeStyle(node, owned) {
   if (!owned) {
     return {
-      background: '#4b5563',
-      borderColor: '#6b7280',
-      color: '#e5e7eb'
+      background: '#334155',
+      borderColor: '#64748b',
+      color: '#cbd5e1'
     }
   }
 
   if (node.category === '인물') {
     return {
-      background: '#a21caf',
-      borderColor: '#581c87',
+      background: '#7e22ce',
+      borderColor: '#c084fc',
       color: 'white'
     }
   }
 
   if (node.category === '전쟁') {
     return {
-      background: '#dc2626',
-      borderColor: '#7f1d1d',
+      background: '#b91c1c',
+      borderColor: '#f87171',
       color: 'white'
     }
   }
@@ -1295,7 +1316,7 @@ function getRoadmapNodeStyle(node, owned) {
   if (node.category === '건축' || node.category === '복식') {
     return {
       background: '#c2410c',
-      borderColor: '#7c2d12',
+      borderColor: '#fb923c',
       color: 'white'
     }
   }
@@ -1303,7 +1324,7 @@ function getRoadmapNodeStyle(node, owned) {
   if (node.category === '예술' || node.category === '사상') {
     return {
       background: '#166534',
-      borderColor: '#052e16',
+      borderColor: '#4ade80',
       color: 'white'
     }
   }
@@ -1311,14 +1332,14 @@ function getRoadmapNodeStyle(node, owned) {
   if (node.category === '유물' || node.category === '제도') {
     return {
       background: '#475569',
-      borderColor: '#1e293b',
+      borderColor: '#cbd5e1',
       color: 'white'
     }
   }
 
   return {
     background: '#4338ca',
-    borderColor: '#312e81',
+    borderColor: '#818cf8',
     color: 'white'
   }
 }
@@ -1326,11 +1347,11 @@ function getRoadmapNodeStyle(node, owned) {
 function getRarityStyle(rarity) {
   if (rarity === 'SSR') {
     return {
-      border: '#f59e0b',
-      cardBackground: 'linear-gradient(180deg, #fffbeb, #ffffff)',
+      border: '#d6b35a',
+      cardBackground: 'linear-gradient(180deg, #2a2115, #111827)',
       badge: {
-        background: 'linear-gradient(135deg, #f59e0b, #fde047)',
-        color: '#78350f'
+        background: 'linear-gradient(135deg, #d6b35a, #facc15)',
+        color: '#2a1600'
       }
     }
   }
@@ -1338,7 +1359,7 @@ function getRarityStyle(rarity) {
   if (rarity === 'SR') {
     return {
       border: '#8b5cf6',
-      cardBackground: 'linear-gradient(180deg, #f5f3ff, #ffffff)',
+      cardBackground: 'linear-gradient(180deg, #21183d, #111827)',
       badge: {
         background: 'linear-gradient(135deg, #7c3aed, #c4b5fd)',
         color: 'white'
@@ -1349,7 +1370,7 @@ function getRarityStyle(rarity) {
   if (rarity === 'R') {
     return {
       border: '#3b82f6',
-      cardBackground: 'linear-gradient(180deg, #eff6ff, #ffffff)',
+      cardBackground: 'linear-gradient(180deg, #10213f, #111827)',
       badge: {
         background: 'linear-gradient(135deg, #2563eb, #93c5fd)',
         color: 'white'
@@ -1358,20 +1379,21 @@ function getRarityStyle(rarity) {
   }
 
   return {
-    border: '#cbd5e1',
-    cardBackground: 'linear-gradient(180deg, #ffffff, #f8fafc)',
+    border: '#475569',
+    cardBackground: 'linear-gradient(180deg, #1f2937, #111827)',
     badge: {
-      background: '#e5e7eb',
-      color: '#374151'
+      background: '#475569',
+      color: '#e5e7eb'
     }
   }
 }
 
 const pageStyle = {
   minHeight: '100vh',
-  background: '#e5e7eb',
+  background: '#020617',
   margin: 0,
   padding: 0,
+  color: '#f8fafc',
   fontFamily:
     'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 }
@@ -1381,7 +1403,7 @@ const phoneShellStyle = {
   maxWidth: '430px',
   minHeight: '100vh',
   margin: '0 auto',
-  background: '#f8fafc',
+  background: 'linear-gradient(180deg, #020617, #0f172a 42%, #111827)',
   padding: '18px 16px 96px',
   boxSizing: 'border-box'
 }
@@ -1389,9 +1411,11 @@ const phoneShellStyle = {
 const heroStyle = {
   borderRadius: '28px',
   padding: '22px',
-  background: 'linear-gradient(135deg, #111827, #312e81 58%, #7c2d12)',
+  background:
+    'radial-gradient(circle at 80% 20%, rgba(214,179,90,0.25), transparent 28%), linear-gradient(135deg, #111827, #1e1b4b 58%, #3b1d0b)',
   color: 'white',
-  boxShadow: '0 16px 40px rgba(15, 23, 42, 0.25)',
+  border: '1px solid rgba(214,179,90,0.28)',
+  boxShadow: '0 20px 50px rgba(0, 0, 0, 0.45)',
   marginBottom: '20px'
 }
 
@@ -1402,30 +1426,38 @@ const heroTopStyle = {
   gap: '12px'
 }
 
-const eyebrowStyle = {
+const heroButtonGroupStyle = {
+  display: 'flex',
+  gap: 6,
+  alignItems: 'center'
+}
+
+const heroEyebrowStyle = {
   margin: '0 0 4px',
-  color: '#c7d2fe',
-  fontSize: '13px',
-  fontWeight: 700
+  color: '#d6b35a',
+  fontSize: '11px',
+  fontWeight: 900,
+  letterSpacing: '0.7px'
 }
 
 const titleStyle = {
   margin: 0,
   fontSize: '36px',
-  letterSpacing: '-1px'
+  letterSpacing: '-1px',
+  color: '#f8fafc'
 }
 
 const heroTextStyle = {
   margin: '12px 0 18px',
-  color: '#e5e7eb',
+  color: '#cbd5e1',
   lineHeight: 1.5
 }
 
 const languageButtonStyle = {
-  border: 0,
+  border: '1px solid rgba(214,179,90,0.35)',
   borderRadius: '999px',
   padding: '8px 10px',
-  background: 'rgba(255,255,255,0.14)',
+  background: 'rgba(15,23,42,0.65)',
   color: 'white',
   fontWeight: 900,
   fontSize: '12px',
@@ -1435,7 +1467,8 @@ const languageButtonStyle = {
 const levelBadgeStyle = {
   padding: '8px 11px',
   borderRadius: '999px',
-  background: 'rgba(255,255,255,0.14)',
+  background: 'rgba(214,179,90,0.18)',
+  border: '1px solid rgba(214,179,90,0.3)',
   fontWeight: 800,
   fontSize: '13px'
 }
@@ -1448,16 +1481,16 @@ const progressHeaderStyle = {
 }
 
 const progressTrackStyle = {
-  height: '13px',
+  height: '12px',
   borderRadius: '999px',
-  background: 'rgba(255,255,255,0.24)',
+  background: 'rgba(255,255,255,0.12)',
   overflow: 'hidden'
 }
 
 const progressFillStyle = {
   height: '100%',
   borderRadius: '999px',
-  background: 'linear-gradient(90deg, #22c55e, #fde047)',
+  background: 'linear-gradient(90deg, #22c55e, #d6b35a)',
   transition: 'width 0.35s ease'
 }
 
@@ -1471,7 +1504,7 @@ const miniStatRowStyle = {
 const miniStatStyle = {
   padding: '11px',
   borderRadius: '16px',
-  background: 'rgba(255,255,255,0.12)',
+  background: 'rgba(255,255,255,0.08)',
   display: 'flex',
   flexDirection: 'column',
   gap: '2px',
@@ -1489,51 +1522,61 @@ const sectionHeaderStyle = {
   marginBottom: '12px'
 }
 
-const eyebrowDarkStyle = {
+const eyebrowGoldStyle = {
   margin: '0 0 4px',
-  color: '#6366f1',
+  color: '#d6b35a',
   fontSize: '13px',
-  fontWeight: 800
+  fontWeight: 900
 }
 
 const sectionTitleStyle = {
   margin: 0,
   fontSize: '25px',
-  letterSpacing: '-0.4px'
+  letterSpacing: '-0.4px',
+  color: '#f8fafc'
 }
 
-const pillStyle = {
+const darkPillStyle = {
   padding: '7px 10px',
   borderRadius: '999px',
-  background: '#eef2ff',
-  color: '#3730a3',
+  background: 'rgba(214,179,90,0.16)',
+  color: '#facc15',
   fontWeight: 800,
-  fontSize: '13px'
+  fontSize: '13px',
+  border: '1px solid rgba(214,179,90,0.25)'
+}
+
+const languageLessonBoxStyle = {
+  padding: '15px',
+  borderRadius: '20px',
+  background: 'linear-gradient(135deg, rgba(30,41,59,0.95), rgba(15,23,42,0.95))',
+  border: '1px solid rgba(214,179,90,0.2)',
+  color: '#e2e8f0',
+  marginBottom: '12px',
+  lineHeight: 1.45
 }
 
 const questHintStyle = {
   padding: '14px',
   borderRadius: '18px',
-  background: '#eef2ff',
-  color: '#312e81',
+  background: 'rgba(59,130,246,0.12)',
+  color: '#bfdbfe',
   marginBottom: '12px',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '4px',
-  fontSize: '14px'
+  fontSize: '14px',
+  lineHeight: 1.45
 }
 
 const quizCardStyle = {
   padding: '18px',
   borderRadius: '24px',
-  background: 'white',
-  border: '1px solid #e5e7eb',
-  boxShadow: '0 10px 24px rgba(15, 23, 42, 0.08)'
+  background: '#0f172a',
+  border: '1px solid rgba(148,163,184,0.22)',
+  boxShadow: '0 14px 30px rgba(0,0,0,0.38)'
 }
 
 const quizLabelStyle = {
   margin: 0,
-  color: '#64748b',
+  color: '#94a3b8',
   fontSize: '13px',
   fontWeight: 800
 }
@@ -1541,7 +1584,8 @@ const quizLabelStyle = {
 const questionStyle = {
   margin: '8px 0 16px',
   fontSize: '20px',
-  lineHeight: 1.5
+  lineHeight: 1.5,
+  color: '#f8fafc'
 }
 
 const choiceGridStyle = {
@@ -1556,8 +1600,9 @@ const choiceButtonStyle = {
   alignItems: 'center',
   padding: '14px',
   borderRadius: '16px',
-  border: '1px solid #d1d5db',
-  background: '#fff',
+  border: '1px solid rgba(148,163,184,0.28)',
+  background: '#111827',
+  color: '#f8fafc',
   fontSize: '15px',
   textAlign: 'left',
   cursor: 'pointer'
@@ -1567,15 +1612,17 @@ const resultBoxStyle = {
   marginTop: '16px',
   padding: '15px',
   borderRadius: '18px',
-  border: '1px solid'
+  border: '1px solid',
+  background: '#020617',
+  color: '#e2e8f0'
 }
 
 const explanationStyle = {
   margin: '10px 0 0',
   padding: '12px',
   borderRadius: '14px',
-  background: 'rgba(255,255,255,0.75)',
-  color: '#334155',
+  background: 'rgba(255,255,255,0.06)',
+  color: '#cbd5e1',
   lineHeight: 1.45,
   fontSize: '13px'
 }
@@ -1584,10 +1631,10 @@ const rewardCardStyle = {
   marginTop: '14px',
   padding: '16px',
   borderRadius: '24px',
-  background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
-  border: '2px solid #f59e0b',
+  background: 'linear-gradient(135deg, #2a2115, #111827)',
+  border: '1px solid #d6b35a',
   textAlign: 'center',
-  boxShadow: '0 10px 24px rgba(245, 158, 11, 0.24)'
+  boxShadow: '0 14px 30px rgba(214,179,90,0.18)'
 }
 
 const rewardTopRowStyle = {
@@ -1598,37 +1645,25 @@ const rewardTopRowStyle = {
 }
 
 const rewardLabelStyle = {
-  color: '#92400e',
+  color: '#d6b35a',
   fontSize: '12px',
   fontWeight: 900
 }
 
 const rewardFlavorStyle = {
   margin: '10px 0 0',
-  color: '#78350f',
+  color: '#cbd5e1',
   fontSize: '13px',
   lineHeight: 1.45
 }
 
-const primaryButtonStyle = {
+const goldButtonStyle = {
   width: '100%',
   border: 0,
   borderRadius: '16px',
   padding: '14px 16px',
-  background: 'white',
-  color: '#111827',
-  fontWeight: 900,
-  fontSize: '15px',
-  cursor: 'pointer'
-}
-
-const primaryButtonDarkStyle = {
-  width: '100%',
-  border: 0,
-  borderRadius: '16px',
-  padding: '14px 16px',
-  background: '#111827',
-  color: 'white',
+  background: 'linear-gradient(135deg, #d6b35a, #b8892f)',
+  color: '#1c1204',
   fontWeight: 900,
   fontSize: '15px',
   cursor: 'pointer',
@@ -1638,27 +1673,11 @@ const primaryButtonDarkStyle = {
 const roadmapSummaryStyle = {
   padding: '15px',
   borderRadius: '20px',
-  background: '#111827',
-  color: 'white',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '7px',
+  background: '#0f172a',
+  border: '1px solid rgba(214,179,90,0.18)',
+  color: '#e2e8f0',
   marginBottom: '12px',
   lineHeight: 1.45
-}
-
-const progressTrackLightStyle = {
-  height: '10px',
-  borderRadius: '999px',
-  background: 'rgba(255,255,255,0.18)',
-  overflow: 'hidden',
-  marginTop: '6px'
-}
-
-const progressFillLightStyle = {
-  height: '100%',
-  borderRadius: '999px',
-  background: 'linear-gradient(90deg, #22c55e, #fde047)'
 }
 
 const roadmapLegendStyle = {
@@ -1673,8 +1692,8 @@ const legendPillStyle = {
   flex: '0 0 auto',
   padding: '6px 9px',
   borderRadius: '999px',
-  background: '#eef2ff',
-  color: '#3730a3',
+  background: 'rgba(214,179,90,0.14)',
+  color: '#facc15',
   fontSize: '12px',
   fontWeight: 900
 }
@@ -1684,7 +1703,8 @@ const roadmapScrollStyle = {
   background: '#020617',
   borderRadius: '24px',
   padding: '14px',
-  boxShadow: '0 10px 26px rgba(15, 23, 42, 0.18)'
+  boxShadow: '0 14px 30px rgba(0,0,0,0.4)',
+  border: '1px solid rgba(148,163,184,0.18)'
 }
 
 const roadmapCanvasStyle = {
@@ -1739,9 +1759,9 @@ const selectedNodeBoxStyle = {
   marginTop: '14px',
   padding: '16px',
   borderRadius: '20px',
-  background: 'white',
-  border: '1px solid #e5e7eb',
-  boxShadow: '0 8px 20px rgba(15, 23, 42, 0.06)'
+  background: '#0f172a',
+  border: '1px solid rgba(148,163,184,0.2)',
+  boxShadow: '0 8px 20px rgba(0,0,0,0.24)'
 }
 
 const nodeDetailTopStyle = {
@@ -1753,8 +1773,8 @@ const nodeDetailTopStyle = {
 const unlockedBadgeStyle = {
   padding: '5px 8px',
   borderRadius: '999px',
-  background: '#dcfce7',
-  color: '#166534',
+  background: 'rgba(34,197,94,0.16)',
+  color: '#86efac',
   fontSize: '12px',
   fontWeight: 900
 }
@@ -1762,8 +1782,8 @@ const unlockedBadgeStyle = {
 const lockedBadgeStyle = {
   padding: '5px 8px',
   borderRadius: '999px',
-  background: '#e5e7eb',
-  color: '#374151',
+  background: 'rgba(148,163,184,0.16)',
+  color: '#cbd5e1',
   fontSize: '12px',
   fontWeight: 900
 }
@@ -1771,8 +1791,8 @@ const lockedBadgeStyle = {
 const nodeGroupBadgeStyle = {
   padding: '5px 8px',
   borderRadius: '999px',
-  background: '#eef2ff',
-  color: '#3730a3',
+  background: 'rgba(214,179,90,0.16)',
+  color: '#facc15',
   fontSize: '12px',
   fontWeight: 900
 }
@@ -1780,8 +1800,9 @@ const nodeGroupBadgeStyle = {
 const collectionSummaryStyle = {
   padding: '15px',
   borderRadius: '20px',
-  background: '#eef2ff',
-  color: '#312e81',
+  background: '#0f172a',
+  border: '1px solid rgba(214,179,90,0.18)',
+  color: '#f8fafc',
   display: 'flex',
   flexDirection: 'column',
   gap: '4px',
@@ -1790,7 +1811,8 @@ const collectionSummaryStyle = {
 
 const subTitleStyle = {
   margin: '22px 0 10px',
-  fontSize: '18px'
+  fontSize: '18px',
+  color: '#f8fafc'
 }
 
 const cardGridStyle = {
@@ -1802,7 +1824,8 @@ const cardGridStyle = {
 const ownedCardStyle = {
   padding: '12px',
   borderRadius: '22px',
-  boxShadow: '0 8px 20px rgba(15, 23, 42, 0.07)'
+  boxShadow: '0 12px 24px rgba(0,0,0,0.28)',
+  color: '#f8fafc'
 }
 
 const cardTopRowStyle = {
@@ -1822,8 +1845,8 @@ const rarityBadgeStyle = {
 const countBadgeStyle = {
   padding: '4px 8px',
   borderRadius: '999px',
-  background: '#fef3c7',
-  color: '#92400e',
+  background: 'rgba(214,179,90,0.18)',
+  color: '#facc15',
   fontSize: '11px',
   fontWeight: 900
 }
@@ -1832,7 +1855,7 @@ const cardImageWrapStyle = {
   width: '100%',
   borderRadius: '18px',
   overflow: 'hidden',
-  background: '#f1f5f9',
+  background: '#111827',
   marginBottom: '10px'
 }
 
@@ -1846,7 +1869,7 @@ const cardImageStyle = {
 const cardImagePlaceholderStyle = {
   width: '100%',
   borderRadius: '18px',
-  background: 'linear-gradient(135deg, #fef3c7, #e0e7ff)',
+  background: 'linear-gradient(135deg, #1e293b, #111827)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -1856,18 +1879,19 @@ const cardImagePlaceholderStyle = {
 const ownedCardTitleStyle = {
   margin: '0 0 5px',
   fontSize: '16px',
-  lineHeight: 1.3
+  lineHeight: 1.3,
+  color: '#f8fafc'
 }
 
 const cardMetaStyle = {
   margin: 0,
-  color: '#64748b',
+  color: '#94a3b8',
   fontSize: '13px'
 }
 
 const flavorTextStyle = {
   margin: '9px 0 0',
-  color: '#475569',
+  color: '#cbd5e1',
   fontSize: '12px',
   lineHeight: 1.45
 }
@@ -1876,9 +1900,9 @@ const lockedCardStyle = {
   minHeight: '188px',
   borderRadius: '22px',
   padding: '15px',
-  background: 'linear-gradient(135deg, #111827, #374151)',
+  background: 'linear-gradient(135deg, #111827, #1e293b)',
   color: 'white',
-  border: '1px solid #4b5563',
+  border: '1px solid #334155',
   position: 'relative',
   overflow: 'hidden',
   boxShadow: 'inset 0 0 30px rgba(0,0,0,0.35)'
@@ -1887,7 +1911,7 @@ const lockedCardStyle = {
 const lockedGlowStyle = {
   position: 'absolute',
   inset: 0,
-  background: 'radial-gradient(circle at center, rgba(255,255,255,0.17), transparent 58%)'
+  background: 'radial-gradient(circle at center, rgba(214,179,90,0.16), transparent 58%)'
 }
 
 const lockedIconStyle = {
@@ -1896,7 +1920,7 @@ const lockedIconStyle = {
   width: '54px',
   height: '54px',
   borderRadius: '999px',
-  background: 'rgba(255,255,255,0.12)',
+  background: 'rgba(255,255,255,0.08)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -1916,7 +1940,7 @@ const lockedTextStyle = {
   position: 'relative',
   zIndex: 1,
   margin: 0,
-  color: '#d1d5db',
+  color: '#cbd5e1',
   fontSize: '13px',
   lineHeight: 1.45
 }
@@ -1926,7 +1950,7 @@ const lockedHintStyle = {
   zIndex: 1,
   display: 'block',
   marginTop: '12px',
-  color: '#c7d2fe',
+  color: '#d6b35a',
   fontWeight: 800
 }
 
@@ -1939,11 +1963,12 @@ const bottomNavStyle = {
   maxWidth: '398px',
   padding: '8px',
   borderRadius: '24px',
-  background: 'rgba(17, 24, 39, 0.94)',
+  background: 'rgba(2, 6, 23, 0.94)',
+  border: '1px solid rgba(214,179,90,0.18)',
   display: 'grid',
   gridTemplateColumns: 'repeat(4, 1fr)',
   gap: '5px',
-  boxShadow: '0 16px 36px rgba(15, 23, 42, 0.38)',
+  boxShadow: '0 16px 36px rgba(0,0,0,0.48)',
   zIndex: 20
 }
 
@@ -1951,8 +1976,8 @@ const tabButtonStyle = (active) => ({
   border: 0,
   borderRadius: '18px',
   padding: '9px 4px',
-  background: active ? 'white' : 'transparent',
-  color: active ? '#111827' : '#d1d5db',
+  background: active ? 'linear-gradient(135deg, #d6b35a, #b8892f)' : 'transparent',
+  color: active ? '#1c1204' : '#cbd5e1',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
@@ -1965,10 +1990,10 @@ const tabButtonStyle = (active) => ({
 const profileCardStyle = {
   padding: '24px',
   borderRadius: '28px',
-  background: 'white',
-  border: '1px solid #e5e7eb',
+  background: '#0f172a',
+  border: '1px solid rgba(214,179,90,0.18)',
   textAlign: 'center',
-  boxShadow: '0 10px 24px rgba(15, 23, 42, 0.08)'
+  boxShadow: '0 14px 30px rgba(0,0,0,0.32)'
 }
 
 const profileAvatarStyle = {
@@ -1976,8 +2001,8 @@ const profileAvatarStyle = {
   height: '72px',
   margin: '0 auto',
   borderRadius: '24px',
-  background: 'linear-gradient(135deg, #312e81, #7c2d12)',
-  color: 'white',
+  background: 'linear-gradient(135deg, #d6b35a, #7c2d12)',
+  color: '#1c1204',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -1995,8 +2020,8 @@ const profileStatGridStyle = {
 const profileStatStyle = {
   padding: '16px',
   borderRadius: '20px',
-  background: 'white',
-  border: '1px solid #e5e7eb',
+  background: '#0f172a',
+  border: '1px solid rgba(148,163,184,0.2)',
   display: 'flex',
   flexDirection: 'column',
   gap: '4px',
@@ -2007,51 +2032,21 @@ const settingsBoxStyle = {
   marginTop: '16px',
   padding: '16px',
   borderRadius: '22px',
-  background: 'white',
-  border: '1px solid #e5e7eb',
+  background: '#0f172a',
+  border: '1px solid rgba(214,179,90,0.18)',
   display: 'grid',
-  gap: '12px'
+  gap: '14px'
 }
 
-const settingRowStyle = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: '12px'
-}
-
-const settingDescStyle = {
-  margin: '4px 0 0',
-  color: '#64748b',
-  fontSize: '13px'
-}
-
-const smallButtonStyle = {
+const smallGoldButtonStyle = {
+  marginTop: '8px',
   border: 0,
   borderRadius: '999px',
-  padding: '8px 12px',
-  background: '#111827',
-  color: 'white',
+  padding: '9px 12px',
+  background: 'linear-gradient(135deg, #d6b35a, #b8892f)',
+  color: '#1c1204',
   fontWeight: 900,
   cursor: 'pointer'
-}
-
-const comingSoonBadgeStyle = {
-  padding: '6px 10px',
-  borderRadius: '999px',
-  background: '#fef3c7',
-  color: '#92400e',
-  fontSize: '12px',
-  fontWeight: 900
-}
-
-const noteBoxStyle = {
-  marginTop: '16px',
-  padding: '16px',
-  borderRadius: '20px',
-  background: '#fef3c7',
-  color: '#78350f',
-  lineHeight: 1.5
 }
 
 const logoutButtonStyle = {
@@ -2059,8 +2054,9 @@ const logoutButtonStyle = {
   marginTop: '16px',
   padding: '14px',
   borderRadius: '16px',
-  border: '1px solid #d1d5db',
-  background: 'white',
+  border: '1px solid rgba(148,163,184,0.3)',
+  background: '#111827',
+  color: '#f8fafc',
   fontWeight: 900,
   cursor: 'pointer'
 }
@@ -2068,25 +2064,25 @@ const logoutButtonStyle = {
 const emptyBoxStyle = {
   padding: '18px',
   borderRadius: '18px',
-  background: 'white',
-  border: '1px dashed #cbd5e1',
-  color: '#64748b'
+  background: '#0f172a',
+  border: '1px dashed #475569',
+  color: '#94a3b8'
 }
 
 const completeBoxStyle = {
   padding: '18px',
   borderRadius: '18px',
-  background: '#ecfdf5',
-  border: '1px solid #86efac',
-  color: '#166534',
+  background: 'rgba(34,197,94,0.12)',
+  border: '1px solid #22c55e',
+  color: '#86efac',
   fontWeight: 900
 }
 
 const errorBoxStyle = {
   padding: '14px',
   borderRadius: '16px',
-  background: '#fff1f2',
-  border: '1px solid #fecdd3',
-  color: '#be123c',
+  background: 'rgba(239,68,68,0.12)',
+  border: '1px solid #ef4444',
+  color: '#fecaca',
   marginBottom: '14px'
 }
