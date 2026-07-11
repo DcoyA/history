@@ -520,21 +520,7 @@ function QuizView({
             )}
 
             {lastRewardCard && (
-              <div style={rewardCardStyle}>
-                <p style={rewardLabelStyle}>획득 보상</p>
-
-                <div style={rewardVisualStyle}>
-                  {getCardIcon(lastRewardCard.category)}
-                </div>
-
-                <h3 style={{ margin: '8px 0 4px' }}>
-                  {lastRewardCard.name}
-                </h3>
-
-                <p style={{ margin: 0, color: '#92400e', fontSize: 13 }}>
-                  {lastRewardCard.era || '고구려'} · {lastRewardCard.category || '카드'}
-                </p>
-              </div>
+              <RewardCard card={lastRewardCard} />
             )}
           </div>
         )}
@@ -546,6 +532,38 @@ function QuizView({
         )}
       </div>
     </section>
+  )
+}
+
+function RewardCard({ card }) {
+  const rarityStyle = getRarityStyle(card?.rarity)
+
+  return (
+    <div style={rewardCardStyle}>
+      <div style={rewardTopRowStyle}>
+        <span style={{ ...rarityBadgeStyle, ...rarityStyle.badge }}>
+          {card?.rarity || 'N'}
+        </span>
+
+        <span style={rewardLabelStyle}>획득 보상</span>
+      </div>
+
+      <CardImage card={card} size="large" />
+
+      <h3 style={{ margin: '10px 0 4px', fontSize: 22 }}>
+        {card?.name}
+      </h3>
+
+      <p style={{ margin: '0 0 8px', color: '#92400e', fontSize: 13 }}>
+        {card?.era || '고구려'} · {card?.category || '카드'}
+      </p>
+
+      {card?.flavor_text && (
+        <p style={rewardFlavorStyle}>
+          {card.flavor_text}
+        </p>
+      )}
+    </div>
   )
 }
 
@@ -601,7 +619,7 @@ function CollectionView({
       ) : (
         <div style={cardGridStyle}>
           {lockedCards.map((card) => (
-            <LockedCard key={card.id} card={card} />
+            <LockedCard key={card.id} />
           ))}
         </div>
       )}
@@ -611,12 +629,19 @@ function CollectionView({
 
 function OwnedCard({ item }) {
   const card = item.card
+  const rarityStyle = getRarityStyle(card?.rarity)
 
   return (
-    <div style={ownedCardStyle}>
+    <div
+      style={{
+        ...ownedCardStyle,
+        border: `1px solid ${rarityStyle.border}`,
+        background: rarityStyle.cardBackground
+      }}
+    >
       <div style={cardTopRowStyle}>
-        <span style={categoryBadgeStyle}>
-          {card?.category || '카드'}
+        <span style={{ ...rarityBadgeStyle, ...rarityStyle.badge }}>
+          {card?.rarity || 'N'}
         </span>
 
         <span style={countBadgeStyle}>
@@ -624,17 +649,52 @@ function OwnedCard({ item }) {
         </span>
       </div>
 
-      <div style={ownedCardVisualStyle}>
-        {getCardIcon(card?.category)}
-      </div>
+      <CardImage card={card} size="normal" />
 
       <h3 style={ownedCardTitleStyle}>
         {card?.name || '이름 없는 카드'}
       </h3>
 
       <p style={cardMetaStyle}>
-        {card?.era || '고구려'}
+        {card?.era || '고구려'} · {card?.category || '카드'}
       </p>
+
+      {card?.flavor_text && (
+        <p style={flavorTextStyle}>
+          {card.flavor_text}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function CardImage({ card, size }) {
+  const isLarge = size === 'large'
+  const height = isLarge ? 148 : 108
+  const fontSize = isLarge ? 52 : 42
+
+  if (card?.image_url) {
+    return (
+      <div
+        style={{
+          ...cardImageWrapStyle,
+          height
+        }}
+      >
+        {card.image_url}
+      </div>
+    )
+  }
+
+  return (
+    <div
+      style={{
+        ...cardImagePlaceholderStyle,
+        height,
+        fontSize
+      }}
+    >
+      {getCardIcon(card?.category)}
     </div>
   )
 }
@@ -717,7 +777,7 @@ function ProfileView({
       <div style={noteBoxStyle}>
         <strong>다음 목표</strong>
         <p>
-          고구려 도감을 모두 채우면 다음 시대 콘텐츠로 확장할 수 있습니다.
+          고구려 도감을 모두 채우면 백제, 신라, 고려, 조선 콘텐츠로 확장할 수 있습니다.
         </p>
       </div>
 
@@ -735,6 +795,50 @@ function getCardIcon(category) {
   if (category === '건축') return '🏯'
   if (category === '예술') return '🎨'
   return '✨'
+}
+
+function getRarityStyle(rarity) {
+  if (rarity === 'SSR') {
+    return {
+      border: '#f59e0b',
+      cardBackground: 'linear-gradient(180deg, #fffbeb, #ffffff)',
+      badge: {
+        background: 'linear-gradient(135deg, #f59e0b, #fde047)',
+        color: '#78350f'
+      }
+    }
+  }
+
+  if (rarity === 'SR') {
+    return {
+      border: '#8b5cf6',
+      cardBackground: 'linear-gradient(180deg, #f5f3ff, #ffffff)',
+      badge: {
+        background: 'linear-gradient(135deg, #7c3aed, #c4b5fd)',
+        color: 'white'
+      }
+    }
+  }
+
+  if (rarity === 'R') {
+    return {
+      border: '#3b82f6',
+      cardBackground: 'linear-gradient(180deg, #eff6ff, #ffffff)',
+      badge: {
+        background: 'linear-gradient(135deg, #2563eb, #93c5fd)',
+        color: 'white'
+      }
+    }
+  }
+
+  return {
+    border: '#cbd5e1',
+    cardBackground: 'linear-gradient(180deg, #ffffff, #f8fafc)',
+    badge: {
+      background: '#e5e7eb',
+      color: '#374151'
+    }
+  }
 }
 
 const pageStyle = {
@@ -920,30 +1024,31 @@ const resultBoxStyle = {
 const rewardCardStyle = {
   marginTop: '14px',
   padding: '16px',
-  borderRadius: '22px',
+  borderRadius: '24px',
   background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
   border: '2px solid #f59e0b',
   textAlign: 'center',
   boxShadow: '0 10px 24px rgba(245, 158, 11, 0.24)'
 }
 
+const rewardTopRowStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: '10px'
+}
+
 const rewardLabelStyle = {
-  margin: 0,
   color: '#92400e',
   fontSize: '12px',
   fontWeight: 900
 }
 
-const rewardVisualStyle = {
-  width: '74px',
-  height: '74px',
-  margin: '10px auto 6px',
-  borderRadius: '24px',
-  background: 'rgba(255,255,255,0.6)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: '42px'
+const rewardFlavorStyle = {
+  margin: '10px 0 0',
+  color: '#78350f',
+  fontSize: '13px',
+  lineHeight: 1.45
 }
 
 const primaryButtonStyle = {
@@ -994,10 +1099,8 @@ const cardGridStyle = {
 }
 
 const ownedCardStyle = {
-  padding: '14px',
+  padding: '12px',
   borderRadius: '22px',
-  background: 'linear-gradient(180deg, #ffffff, #f8fafc)',
-  border: '1px solid #e5e7eb',
   boxShadow: '0 8px 20px rgba(15, 23, 42, 0.07)'
 }
 
@@ -1005,14 +1108,12 @@ const cardTopRowStyle = {
   display: 'flex',
   justifyContent: 'space-between',
   gap: '6px',
-  marginBottom: '10px'
+  marginBottom: '8px'
 }
 
-const categoryBadgeStyle = {
+const rarityBadgeStyle = {
   padding: '4px 8px',
   borderRadius: '999px',
-  background: '#eef2ff',
-  color: '#3730a3',
   fontSize: '11px',
   fontWeight: 900
 }
@@ -1026,14 +1127,28 @@ const countBadgeStyle = {
   fontWeight: 900
 }
 
-const ownedCardVisualStyle = {
-  height: '70px',
+const cardImageWrapStyle = {
+  width: '100%',
+  borderRadius: '18px',
+  overflow: 'hidden',
+  background: '#f1f5f9',
+  marginBottom: '10px'
+}
+
+const cardImageStyle = {
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+  display: 'block'
+}
+
+const cardImagePlaceholderStyle = {
+  width: '100%',
   borderRadius: '18px',
   background: 'linear-gradient(135deg, #fef3c7, #e0e7ff)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontSize: '38px',
   marginBottom: '10px'
 }
 
@@ -1049,8 +1164,15 @@ const cardMetaStyle = {
   fontSize: '13px'
 }
 
+const flavorTextStyle = {
+  margin: '9px 0 0',
+  color: '#475569',
+  fontSize: '12px',
+  lineHeight: 1.45
+}
+
 const lockedCardStyle = {
-  minHeight: '180px',
+  minHeight: '188px',
   borderRadius: '22px',
   padding: '15px',
   background: 'linear-gradient(135deg, #111827, #374151)',
