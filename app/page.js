@@ -681,7 +681,11 @@ function CardImage({ card, size }) {
           height
         }}
       >
-        {card.image_url}
+        <img
+          src={card.image_url}
+          alt={card.name}
+          style={cardImageStyle}
+        />
       </div>
     )
   }
