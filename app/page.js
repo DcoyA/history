@@ -76,6 +76,7 @@ export default function Home() {
     const { data, error } = await supabase
       .from('cards')
       .select('*')
+      .order('name', { ascending: true })
 
     if (error) {
       console.error('전체 카드 조회 실패:', error)
@@ -274,8 +275,12 @@ export default function Home() {
   }
 
   const currentLesson = lessons[currentLessonIndex]
+
+  const ownedCardIds = ownedCards.map((item) => item.card_id)
   const ownedCount = ownedCards.length
   const totalCount = allCards.length
+  const lockedCards = allCards.filter((card) => !ownedCardIds.includes(card.id))
+
   const collectionRate =
     totalCount > 0 ? Math.round((ownedCount / totalCount) * 100) : 0
 
@@ -283,7 +288,7 @@ export default function Home() {
     <main
       style={{
         padding: '32px',
-        maxWidth: '920px',
+        maxWidth: '960px',
         margin: '0 auto',
         fontFamily:
           'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
@@ -419,200 +424,3 @@ export default function Home() {
                 </h3>
 
                 <div style={{ display: 'grid', gap: '10px', marginTop: '18px' }}>
-                  {[1, 2, 3, 4].map((number) => {
-                    const choiceText = currentLesson[`choice${number}`]
-                    const isSelected = selectedChoice === number
-                    const isCorrectChoice = number === currentLesson.answer
-                    const answeredCorrectly = resultMessage.includes('정답')
-
-                    let background = '#fff'
-                    let border = '1px solid #ccc'
-
-                    if (isSelected) {
-                      background = '#eef2ff'
-                      border = '2px solid #111827'
-                    }
-
-                    if (answeredCorrectly && isCorrectChoice) {
-                      background = '#dcfce7'
-                      border = '2px solid #16a34a'
-                    }
-
-                    return (
-                      <button
-                        key={number}
-                        onClick={() => handleAnswer(number)}
-                        disabled={answeredCorrectly}
-                        style={{
-                          padding: '14px',
-                          textAlign: 'left',
-                          borderRadius: '12px',
-                          border,
-                          background,
-                          cursor: answeredCorrectly ? 'default' : 'pointer',
-                          fontSize: '15px'
-                        }}
-                      >
-                        {number}. {choiceText}
-                      </button>
-                    )
-                  })}
-                </div>
-
-                {resultMessage && (
-                  <div
-                    style={{
-                      marginTop: '18px',
-                      padding: '18px',
-                      borderRadius: '16px',
-                      background: resultMessage.includes('정답')
-                        ? '#f0fdf4'
-                        : '#fff1f2',
-                      border: resultMessage.includes('정답')
-                        ? '1px solid #86efac'
-                        : '1px solid #fecdd3'
-                    }}
-                  >
-                    <p
-                      style={{
-                        margin: '0 0 8px',
-                        color: resultMessage.includes('정답')
-                          ? 'green'
-                          : 'crimson',
-                        fontWeight: 'bold'
-                      }}
-                    >
-                      {resultMessage}
-                    </p>
-
-                    {rewardMessage && (
-                      <p style={{ margin: 0 }}>
-                        {rewardMessage}
-                      </p>
-                    )}
-
-                    {lastRewardCard && (
-                      <div
-                        style={{
-                          marginTop: '16px',
-                          padding: '18px',
-                          borderRadius: '18px',
-                          background:
-                            'linear-gradient(135deg, #fef3c7, #fde68a)',
-                          border: '2px solid #f59e0b',
-                          boxShadow: '0 8px 24px rgba(245, 158, 11, 0.25)'
-                        }}
-                      >
-                        <p style={{ margin: '0 0 6px', fontSize: '13px' }}>
-                          획득 보상
-                        </p>
-                        <h3 style={{ margin: '0 0 8px' }}>
-                          {lastRewardCard.name}
-                        </h3>
-                        <p style={{ margin: '0 0 4px' }}>
-                          시대: {lastRewardCard.era || '-'}
-                        </p>
-                        <p style={{ margin: 0 }}>
-                          분류: {lastRewardCard.category || '-'}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {resultMessage.includes('정답입니다') && (
-                  <button
-                    onClick={goNextQuiz}
-                    style={{
-                      marginTop: '14px',
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      border: '1px solid #111',
-                      background: '#111827',
-                      color: 'white',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    다음 문제
-                  </button>
-                )}
-              </div>
-            )}
-          </section>
-
-          <section>
-            <h2>내 도감</h2>
-
-            {ownedCards.length === 0 ? (
-              <p>아직 획득한 카드가 없습니다.</p>
-            ) : (
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                  gap: '14px'
-                }}
-              >
-                {ownedCards.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      border: '1px solid #ddd',
-                      borderRadius: '18px',
-                      padding: '18px',
-                      background:
-                        'linear-gradient(180deg, #ffffff, #f8fafc)',
-                      boxShadow: '0 6px 18px rgba(15, 23, 42, 0.06)'
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'inline-block',
-                        padding: '4px 8px',
-                        borderRadius: '999px',
-                        background: '#eef2ff',
-                        color: '#3730a3',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        marginBottom: '10px'
-                      }}
-                    >
-                      {item.card?.category || '카드'}
-                    </div>
-
-                    <h3 style={{ margin: '0 0 10px', fontSize: '20px' }}>
-                      {item.card?.name || '이름 없는 카드'}
-                    </h3>
-
-                    <p style={{ margin: '4px 0' }}>
-                      시대: {item.card?.era || '-'}
-                    </p>
-
-                    <p style={{ margin: '4px 0', fontWeight: 'bold' }}>
-                      보유 수량: {item.count || 1}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <br />
-
-          <button onClick={logout}>
-            로그아웃
-          </button>
-        </>
-      )}
-    </main>
-  )
-}
-
-const statBoxStyle = {
-  padding: '14px',
-  borderRadius: '16px',
-  background: 'rgba(255,255,255,0.12)',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '6px'
-}
