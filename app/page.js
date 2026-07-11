@@ -11,6 +11,7 @@ export default function Home() {
   const [ownedCards, setOwnedCards] = useState([])
   const [selectedChoice, setSelectedChoice] = useState(null)
   const [resultMessage, setResultMessage] = useState('')
+  const [rewardMessage, setRewardMessage] = useState('')
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
 
@@ -88,6 +89,7 @@ export default function Home() {
       .from('user_cards')
       .select('*')
       .eq('user_id', userId)
+      .order('obtained_at', { ascending: false })
 
     if (userCardsError) {
       console.error('보유 카드 조회 실패:', userCardsError)
@@ -147,6 +149,8 @@ export default function Home() {
     if (!currentLesson) return
 
     setSelectedChoice(choiceNumber)
+    setResultMessage('')
+    setRewardMessage('')
 
     const isCorrect = choiceNumber === currentLesson.answer
 
@@ -157,6 +161,19 @@ export default function Home() {
 
     const rewardCardId = currentLesson.reward_card_id
 
+    const { data: rewardCard, error: rewardCardError } = await supabase
+      .from('cards')
+      .select('*')
+      .eq('id', rewardCardId)
+      .single()
+
+    if (rewardCardError) {
+      console.error('보상 카드 조회 실패:', rewardCardError)
+      setResultMessage('정답입니다.')
+      setRewardMessage('하지만 보상 카드 정보를 불러오지 못했습니다.')
+      return
+    }
+
     const { data: existingCard, error: existingError } = await supabase
       .from('user_cards')
       .select('*')
@@ -166,23 +183,32 @@ export default function Home() {
 
     if (existingError) {
       console.error('기존 카드 조회 실패:', existingError)
-      setResultMessage('카드 확인 중 오류가 발생했습니다.')
+      setResultMessage('정답입니다.')
+      setRewardMessage('카드 확인 중 오류가 발생했습니다.')
       return
     }
 
     if (existingCard) {
+      const nextCount = (existingCard.count || 1) + 1
+
       const { error: updateError } = await supabase
         .from('user_cards')
         .update({
-          count: (existingCard.count || 1) + 1
+          count: nextCount
         })
         .eq('id', existingCard.id)
 
       if (updateError) {
         console.error('카드 수량 증가 실패:', updateError)
-        setResultMessage('카드 저장 중 오류가 발생했습니다.')
+        setResultMessage('정답입니다.')
+        setRewardMessage('카드 저장 중 오류가 발생했습니다.')
         return
       }
+
+      setResultMessage('정답입니다!')
+      setRewardMessage(
+        `${rewardCard.name} 카드를 이미 보유 중입니다. 수량이 ${nextCount}장으로 증가했습니다.`
+      )
     } else {
       const { error: insertError } = await supabase
         .from('user_cards')
@@ -195,18 +221,22 @@ export default function Home() {
 
       if (insertError) {
         console.error('카드 지급 실패:', insertError)
-        setResultMessage('카드 저장 중 오류가 발생했습니다.')
+        setResultMessage('정답입니다.')
+        setRewardMessage('카드 저장 중 오류가 발생했습니다.')
         return
       }
+
+      setResultMessage('정답입니다!')
+      setRewardMessage(`새 카드 획득: ${rewardCard.name}`)
     }
 
-    setResultMessage('정답입니다! 카드가 도감에 추가되었습니다.')
     await loadOwnedCards(user.id)
   }
 
   const goNextQuiz = () => {
     setSelectedChoice(null)
     setResultMessage('')
+    setRewardMessage('')
 
     if (currentLessonIndex < lessons.length - 1) {
       setCurrentLessonIndex(currentLessonIndex + 1)
@@ -282,25 +312,35 @@ export default function Home() {
                 <div style={{ display: 'grid', gap: '10px', marginTop: '16px' }}>
                   {[1, 2, 3, 4].map((number) => {
                     const choiceText = currentLesson[`choice${number}`]
+                    const isSelected = selectedChoice === number
+                    const isCorrectChoice = number === currentLesson.answer
+                    const answeredCorrectly = resultMessage.includes('정답')
+
+                    let background = '#fff'
+                    let border = '1px solid #ccc'
+
+                    if (isSelected) {
+                      background = '#eef2ff'
+                      border = '2px solid #111'
+                    }
+
+                    if (answeredCorrectly && isCorrectChoice) {
+                      background = '#dcfce7'
+                      border = '2px solid #16a34a'
+                    }
 
                     return (
                       <button
                         key={number}
                         onClick={() => handleAnswer(number)}
-                        disabled={resultMessage.includes('정답입니다')}
+                        disabled={answeredCorrectly}
                         style={{
                           padding: '12px',
                           textAlign: 'left',
                           borderRadius: '10px',
-                          border:
-                            selectedChoice === number
-                              ? '2px solid #111'
-                              : '1px solid #ccc',
-                          background:
-                            selectedChoice === number
-                              ? '#eef2ff'
-                              : '#fff',
-                          cursor: 'pointer'
+                          border,
+                          background,
+                          cursor: answeredCorrectly ? 'default' : 'pointer'
                         }}
                       >
                         {number}. {choiceText}
@@ -310,17 +350,37 @@ export default function Home() {
                 </div>
 
                 {resultMessage && (
-                  <p
+                  <div
                     style={{
                       marginTop: '16px',
-                      color: resultMessage.includes('정답')
-                        ? 'green'
-                        : 'crimson',
-                      fontWeight: 'bold'
+                      padding: '14px',
+                      borderRadius: '12px',
+                      background: resultMessage.includes('정답')
+                        ? '#f0fdf4'
+                        : '#fff1f2',
+                      border: resultMessage.includes('정답')
+                        ? '1px solid #86efac'
+                        : '1px solid #fecdd3'
                     }}
                   >
-                    {resultMessage}
-                  </p>
+                    <p
+                      style={{
+                        margin: '0 0 6px',
+                        color: resultMessage.includes('정답')
+                          ? 'green'
+                          : 'crimson',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      {resultMessage}
+                    </p>
+
+                    {rewardMessage && (
+                      <p style={{ margin: 0 }}>
+                        {rewardMessage}
+                      </p>
+                    )}
+                  </div>
                 )}
 
                 {resultMessage.includes('정답입니다') && (
@@ -366,7 +426,7 @@ export default function Home() {
                       분류: {item.card?.category || '-'}
                     </p>
 
-                    <p style={{ margin: '4px 0' }}>
+                    <p style={{ margin: '4px 0', fontWeight: 'bold' }}>
                       보유 수량: {item.count || 1}
                     </p>
                   </div>
