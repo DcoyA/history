@@ -9,6 +9,14 @@ export default function Home() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user)
+        if (data.user) {
+          await supabase
+            .from('profiles')
+            .upsert({
+              id: data.user.id,
+              nickname: data.user.user_metadata?.name
+            })
+        }
     })
   }, [])
 
