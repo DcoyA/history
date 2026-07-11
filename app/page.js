@@ -3,7 +3,186 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+const dictionaries = {
+  ko: {
+    appTitle: 'Hi-Story',
+    heroLabel: '고구려 퀘스트',
+    heroText: '역사 흐름을 따라가며 언어 카드와 도감을 완성하세요.',
+    progress: '고구려 진행도',
+    completed: '완료',
+    remaining: '남은 퀘스트',
+    total: '전체',
+    googleStart: 'Google로 시작하기',
+
+    tabs: {
+      quiz: '퀴즈',
+      roadmap: '로드맵',
+      collection: '도감',
+      profile: '내정보'
+    },
+
+    quiz: {
+      eyebrow: '오늘의 도전',
+      title: '고구려 퀴즈',
+      currentQuest: '현재 퀘스트',
+      questHint: '정답을 맞히면 연결된 역사 카드와 언어 학습 표현이 해금됩니다.',
+      question: '문제',
+      next: '다음 문제로',
+      correct: '정답입니다!',
+      wrong: '오답입니다',
+      tryAgain: '괜찮습니다. 다시 골라보세요.',
+      newCard: '새 카드 획득',
+      countUp: '카드 수량이 증가했습니다.',
+      reward: '획득 보상',
+      rewardError: '보상 카드 정보를 불러오지 못했습니다.',
+      cardError: '카드 확인 중 오류가 발생했습니다.',
+      saveError: '카드 저장 중 오류가 발생했습니다.'
+    },
+
+    roadmap: {
+      eyebrow: '전체 흐름',
+      title: '고구려 로드맵',
+      summaryTitle: '이 앱의 핵심 커리큘럼입니다.',
+      summaryText: '퀴즈를 풀면 아래 역사 노드가 하나씩 컬러로 해금됩니다.',
+      tapNode: '노드를 눌러보세요',
+      tapNodeDesc: '각 퀘스트가 어떤 역사 흐름에 속하는지 확인할 수 있습니다.',
+      unlocked: '해금 완료',
+      locked: '미해금',
+      lockedQuest: '아직 해금되지 않은 퀘스트',
+      yearFlow: '년대 흐름'
+    },
+
+    collection: {
+      eyebrow: '수집 현황',
+      title: '내 도감',
+      owned: '획득한 카드',
+      locked: '미획득 카드',
+      empty: '아직 획득한 카드가 없습니다.',
+      complete: '고구려 도감을 모두 완성했습니다!',
+      undiscovered: '미발견 카드',
+      unlockHint: '퀴즈를 풀어 해금',
+      acquired: '획득',
+      undiscoveredCount: '미발견'
+    },
+
+    profile: {
+      explorer: '고구려 로드맵 탐험가',
+      level: '레벨',
+      exp: '경험치',
+      quest: '퀘스트',
+      completion: '완성도',
+      appLanguage: '앱 언어',
+      studyLanguage: '학습 언어',
+      studyLanguageValue: 'English',
+      expansionTitle: '서비스 확장 방향',
+      expansionText: '고구려 로드맵을 완성하면 백제, 신라, 고려, 조선 로드맵으로 확장할 수 있습니다.',
+      logout: '로그아웃'
+    },
+
+    status: {
+      loading: '불러오는 중...',
+      userLoadFail: '사용자 정보를 불러오지 못했습니다.',
+      profileSaveFail: '프로필 저장에 실패했습니다.',
+      cardsLoadFail: '전체 카드 정보를 불러오지 못했습니다.',
+      ownedCardsLoadFail: '보유 카드 정보를 불러오지 못했습니다.',
+      lessonLoadFail: '퀴즈 정보를 불러오지 못했습니다.'
+    }
+  },
+
+  en: {
+    appTitle: 'Hi-Story',
+    heroLabel: 'Goguryeo Quest',
+    heroText: 'Follow historical milestones and unlock language learning cards.',
+    progress: 'Goguryeo Progress',
+    completed: 'Done',
+    remaining: 'Quests Left',
+    total: 'Total',
+    googleStart: 'Continue with Google',
+
+    tabs: {
+      quiz: 'Quiz',
+      roadmap: 'Roadmap',
+      collection: 'Cards',
+      profile: 'Profile'
+    },
+
+    quiz: {
+      eyebrow: "Today's Challenge",
+      title: 'Goguryeo Quiz',
+      currentQuest: 'Current Quest',
+      questHint: 'Answer correctly to unlock a history card and a language expression.',
+      question: 'Question',
+      next: 'Next Question',
+      correct: 'Correct!',
+      wrong: 'Not quite',
+      tryAgain: 'No worries. Try again.',
+      newCard: 'New card unlocked',
+      countUp: 'Card count increased.',
+      reward: 'Reward',
+      rewardError: 'Could not load the reward card.',
+      cardError: 'There was an error checking the card.',
+      saveError: 'There was an error saving the card.'
+    },
+
+    roadmap: {
+      eyebrow: 'Full Journey',
+      title: 'Goguryeo Roadmap',
+      summaryTitle: 'This is the core learning journey.',
+      summaryText: 'Each historical node is unlocked as you answer quizzes.',
+      tapNode: 'Tap a node',
+      tapNodeDesc: 'See how each quest connects to the historical flow.',
+      unlocked: 'Unlocked',
+      locked: 'Locked',
+      lockedQuest: 'Locked quest',
+      yearFlow: 's flow'
+    },
+
+    collection: {
+      eyebrow: 'Collection',
+      title: 'My Cards',
+      owned: 'Unlocked Cards',
+      locked: 'Locked Cards',
+      empty: 'You have not unlocked any cards yet.',
+      complete: 'You completed the Goguryeo collection!',
+      undiscovered: 'Undiscovered Card',
+      unlockHint: 'Unlock through quizzes',
+      acquired: 'Unlocked',
+      undiscoveredCount: 'Locked'
+    },
+
+    profile: {
+      explorer: 'Goguryeo Roadmap Explorer',
+      level: 'Level',
+      exp: 'EXP',
+      quest: 'Quests',
+      completion: 'Completion',
+      appLanguage: 'App Language',
+      studyLanguage: 'Study Language',
+      studyLanguageValue: 'English',
+      expansionTitle: 'Expansion Plan',
+      expansionText: 'After Goguryeo, this can expand to Baekje, Silla, Goryeo, and Joseon.',
+      logout: 'Log out'
+    },
+
+    status: {
+      loading: 'Loading...',
+      userLoadFail: 'Could not load user information.',
+      profileSaveFail: 'Could not save your profile.',
+      cardsLoadFail: 'Could not load card data.',
+      ownedCardsLoadFail: 'Could not load your cards.',
+      lessonLoadFail: 'Could not load quiz data.'
+    }
+  }
+}
+
+function getText(language) {
+  return dictionaries[language] || dictionaries.ko
+}
+
 export default function Home() {
+  const [appLanguage, setAppLanguage] = useState('ko')
+  const t = getText(appLanguage)
+
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [lessons, setLessons] = useState([])
@@ -21,8 +200,19 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('quiz')
 
   useEffect(() => {
+    const savedLanguage = localStorage.getItem('hiStoryAppLanguage')
+    if (savedLanguage) {
+      setAppLanguage(savedLanguage)
+    }
+
     loadData()
   }, [])
+
+  const changeAppLanguage = () => {
+    const nextLanguage = appLanguage === 'ko' ? 'en' : 'ko'
+    setAppLanguage(nextLanguage)
+    localStorage.setItem('hiStoryAppLanguage', nextLanguage)
+  }
 
   const loadData = async () => {
     setLoading(true)
@@ -32,7 +222,7 @@ export default function Home() {
 
     if (userError) {
       console.error('사용자 조회 실패:', userError)
-      setErrorMessage('사용자 정보를 불러오지 못했습니다.')
+      setErrorMessage(t.status.userLoadFail)
       setLoading(false)
       return
     }
@@ -63,7 +253,7 @@ export default function Home() {
 
     if (profileError) {
       console.error('프로필 저장 실패:', profileError)
-      setErrorMessage('프로필 저장에 실패했습니다.')
+      setErrorMessage(t.status.profileSaveFail)
     } else {
       setProfile(savedProfile)
     }
@@ -84,7 +274,7 @@ export default function Home() {
 
     if (error) {
       console.error('전체 카드 조회 실패:', error)
-      setErrorMessage('전체 카드 정보를 불러오지 못했습니다.')
+      setErrorMessage(t.status.cardsLoadFail)
       return
     }
 
@@ -99,7 +289,7 @@ export default function Home() {
 
     if (error) {
       console.error('퀴즈 조회 실패:', error)
-      setErrorMessage('퀴즈 정보를 불러오지 못했습니다.')
+      setErrorMessage(t.status.lessonLoadFail)
       return
     }
 
@@ -130,7 +320,7 @@ export default function Home() {
 
     if (userCardsError) {
       console.error('보유 카드 조회 실패:', userCardsError)
-      setErrorMessage('보유 카드 정보를 불러오지 못했습니다.')
+      setErrorMessage(t.status.ownedCardsLoadFail)
       return
     }
 
@@ -148,7 +338,7 @@ export default function Home() {
 
     if (cardsError) {
       console.error('카드 상세 조회 실패:', cardsError)
-      setErrorMessage('카드 상세 정보를 불러오지 못했습니다.')
+      setErrorMessage(t.status.ownedCardsLoadFail)
       return
     }
 
@@ -192,8 +382,8 @@ export default function Home() {
     const isCorrect = choiceNumber === currentLesson.answer
 
     if (!isCorrect) {
-      setResultMessage('오답입니다')
-      setRewardMessage('괜찮습니다. 다시 골라보세요.')
+      setResultMessage(t.quiz.wrong)
+      setRewardMessage(t.quiz.tryAgain)
       return
     }
 
@@ -207,8 +397,8 @@ export default function Home() {
 
     if (rewardCardError) {
       console.error('보상 카드 조회 실패:', rewardCardError)
-      setResultMessage('정답입니다')
-      setRewardMessage('하지만 보상 카드 정보를 불러오지 못했습니다.')
+      setResultMessage(t.quiz.correct)
+      setRewardMessage(t.quiz.rewardError)
       return
     }
 
@@ -223,8 +413,8 @@ export default function Home() {
 
     if (existingError) {
       console.error('기존 카드 조회 실패:', existingError)
-      setResultMessage('정답입니다')
-      setRewardMessage('카드 확인 중 오류가 발생했습니다.')
+      setResultMessage(t.quiz.correct)
+      setRewardMessage(t.quiz.cardError)
       return
     }
 
@@ -240,13 +430,13 @@ export default function Home() {
 
       if (updateError) {
         console.error('카드 수량 증가 실패:', updateError)
-        setResultMessage('정답입니다')
-        setRewardMessage('카드 저장 중 오류가 발생했습니다.')
+        setResultMessage(t.quiz.correct)
+        setRewardMessage(t.quiz.saveError)
         return
       }
 
-      setResultMessage('정답입니다!')
-      setRewardMessage(`${rewardCard.name} 카드 수량이 ${nextCount}장으로 증가했습니다.`)
+      setResultMessage(t.quiz.correct)
+      setRewardMessage(`${rewardCard.name} ${t.quiz.countUp} x${nextCount}`)
     } else {
       const { error: insertError } = await supabase
         .from('user_cards')
@@ -259,13 +449,13 @@ export default function Home() {
 
       if (insertError) {
         console.error('카드 지급 실패:', insertError)
-        setResultMessage('정답입니다')
-        setRewardMessage('카드 저장 중 오류가 발생했습니다.')
+        setResultMessage(t.quiz.correct)
+        setRewardMessage(t.quiz.saveError)
         return
       }
 
-      setResultMessage('정답입니다!')
-      setRewardMessage(`새 카드 획득: ${rewardCard.name}`)
+      setResultMessage(t.quiz.correct)
+      setRewardMessage(`${t.quiz.newCard}: ${rewardCard.name}`)
     }
 
     await loadOwnedCards(user.id)
@@ -290,8 +480,8 @@ export default function Home() {
     return (
       <main style={pageStyle}>
         <div style={phoneShellStyle}>
-          <h1 style={{ marginTop: 40 }}>Hi-Story</h1>
-          <p>불러오는 중...</p>
+          <h1 style={{ marginTop: 40 }}>{t.appTitle}</h1>
+          <p>{t.status.loading}</p>
         </div>
       </main>
     )
@@ -311,29 +501,35 @@ export default function Home() {
         <section style={heroStyle}>
           <div style={heroTopStyle}>
             <div>
-              <p style={eyebrowStyle}>고구려 퀘스트</p>
-              <h1 style={titleStyle}>Hi-Story</h1>
+              <p style={eyebrowStyle}>{t.heroLabel}</p>
+              <h1 style={titleStyle}>{t.appTitle}</h1>
             </div>
 
-            {user && (
-              <div style={levelBadgeStyle}>
-                Lv. {profile?.level ?? 1}
-              </div>
-            )}
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <button onClick={changeAppLanguage} style={languageButtonStyle}>
+                🌐 {appLanguage.toUpperCase()}
+              </button>
+
+              {user && (
+                <div style={levelBadgeStyle}>
+                  Lv. {profile?.level ?? 1}
+                </div>
+              )}
+            </div>
           </div>
 
           <p style={heroTextStyle}>
-            퀴즈를 풀며 고구려 로드맵과 도감을 완성하세요.
+            {t.heroText}
           </p>
 
           {!user ? (
             <button onClick={login} style={primaryButtonStyle}>
-              Google로 시작하기
+              {t.googleStart}
             </button>
           ) : (
             <>
               <div style={progressHeaderStyle}>
-                <span>고구려 진행도</span>
+                <span>{t.progress}</span>
                 <strong>{collectionRate}%</strong>
               </div>
 
@@ -349,17 +545,17 @@ export default function Home() {
               <div style={miniStatRowStyle}>
                 <div style={miniStatStyle}>
                   <strong>{ownedCount}</strong>
-                  <span>완료</span>
+                  <span>{t.completed}</span>
                 </div>
 
                 <div style={miniStatStyle}>
                   <strong>{lockedCards.length}</strong>
-                  <span>남은 퀘스트</span>
+                  <span>{t.remaining}</span>
                 </div>
 
                 <div style={miniStatStyle}>
                   <strong>{totalCount}</strong>
-                  <span>전체</span>
+                  <span>{t.total}</span>
                 </div>
               </div>
             </>
@@ -374,6 +570,7 @@ export default function Home() {
 
         {user && activeTab === 'quiz' && (
           <QuizView
+            t={t}
             currentLesson={currentLesson}
             currentLessonIndex={currentLessonIndex}
             lessons={lessons}
@@ -388,6 +585,7 @@ export default function Home() {
 
         {user && activeTab === 'roadmap' && (
           <RoadmapView
+            t={t}
             roadmapNodes={roadmapNodes}
             allCards={allCards}
             ownedCardIds={ownedCardIds}
@@ -401,6 +599,7 @@ export default function Home() {
 
         {user && activeTab === 'collection' && (
           <CollectionView
+            t={t}
             ownedCards={ownedCards}
             lockedCards={lockedCards}
             ownedCount={ownedCount}
@@ -411,6 +610,9 @@ export default function Home() {
 
         {user && activeTab === 'profile' && (
           <ProfileView
+            t={t}
+            appLanguage={appLanguage}
+            changeAppLanguage={changeAppLanguage}
             user={user}
             profile={profile}
             ownedCount={ownedCount}
@@ -427,7 +629,7 @@ export default function Home() {
               style={tabButtonStyle(activeTab === 'quiz')}
             >
               <span>⚔️</span>
-              <small>퀴즈</small>
+              <small>{t.tabs.quiz}</small>
             </button>
 
             <button
@@ -435,7 +637,7 @@ export default function Home() {
               style={tabButtonStyle(activeTab === 'roadmap')}
             >
               <span>🗺️</span>
-              <small>로드맵</small>
+              <small>{t.tabs.roadmap}</small>
             </button>
 
             <button
@@ -443,7 +645,7 @@ export default function Home() {
               style={tabButtonStyle(activeTab === 'collection')}
             >
               <span>📚</span>
-              <small>도감</small>
+              <small>{t.tabs.collection}</small>
             </button>
 
             <button
@@ -451,7 +653,7 @@ export default function Home() {
               style={tabButtonStyle(activeTab === 'profile')}
             >
               <span>👤</span>
-              <small>내정보</small>
+              <small>{t.tabs.profile}</small>
             </button>
           </nav>
         )}
@@ -461,6 +663,7 @@ export default function Home() {
 }
 
 function QuizView({
+  t,
   currentLesson,
   currentLessonIndex,
   lessons,
@@ -474,20 +677,20 @@ function QuizView({
   if (!currentLesson) {
     return (
       <section style={contentSectionStyle}>
-        <h2>오늘의 퀴즈</h2>
-        <p>등록된 퀴즈가 없습니다.</p>
+        <h2>{t.quiz.title}</h2>
+        <p>{t.status.lessonLoadFail}</p>
       </section>
     )
   }
 
-  const answeredCorrectly = resultMessage.includes('정답')
+  const answeredCorrectly = resultMessage === t.quiz.correct
 
   return (
     <section style={contentSectionStyle}>
       <div style={sectionHeaderStyle}>
         <div>
-          <p style={eyebrowDarkStyle}>오늘의 도전</p>
-          <h2 style={sectionTitleStyle}>고구려 퀴즈</h2>
+          <p style={eyebrowDarkStyle}>{t.quiz.eyebrow}</p>
+          <h2 style={sectionTitleStyle}>{t.quiz.title}</h2>
         </div>
 
         <span style={pillStyle}>
@@ -496,14 +699,12 @@ function QuizView({
       </div>
 
       <div style={questHintStyle}>
-        <strong>현재 퀘스트</strong>
-        <span>
-          정답을 맞히면 연결된 역사 카드가 해금됩니다.
-        </span>
+        <strong>{t.quiz.currentQuest}</strong>
+        <span>{t.quiz.questHint}</span>
       </div>
 
       <div style={quizCardStyle}>
-        <p style={quizLabelStyle}>문제</p>
+        <p style={quizLabelStyle}>{t.quiz.question}</p>
         <h3 style={questionStyle}>{currentLesson.question}</h3>
 
         <div style={choiceGridStyle}>
@@ -548,13 +749,13 @@ function QuizView({
           <div
             style={{
               ...resultBoxStyle,
-              background: resultMessage.includes('정답') ? '#ecfdf5' : '#fff1f2',
-              borderColor: resultMessage.includes('정답') ? '#86efac' : '#fecdd3'
+              background: answeredCorrectly ? '#ecfdf5' : '#fff1f2',
+              borderColor: answeredCorrectly ? '#86efac' : '#fecdd3'
             }}
           >
             <strong
               style={{
-                color: resultMessage.includes('정답') ? '#15803d' : '#be123c'
+                color: answeredCorrectly ? '#15803d' : '#be123c'
               }}
             >
               {resultMessage}
@@ -566,21 +767,21 @@ function QuizView({
               </p>
             )}
 
-            {currentLesson.explanation && resultMessage.includes('정답') && (
+            {currentLesson.explanation && answeredCorrectly && (
               <p style={explanationStyle}>
                 {currentLesson.explanation}
               </p>
             )}
 
             {lastRewardCard && (
-              <RewardCard card={lastRewardCard} />
+              <RewardCard t={t} card={lastRewardCard} />
             )}
           </div>
         )}
 
         {answeredCorrectly && (
           <button onClick={goNextQuiz} style={primaryButtonDarkStyle}>
-            다음 문제로
+            {t.quiz.next}
           </button>
         )}
       </div>
@@ -589,6 +790,7 @@ function QuizView({
 }
 
 function RoadmapView({
+  t,
   roadmapNodes,
   allCards,
   ownedCardIds,
@@ -623,8 +825,8 @@ function RoadmapView({
     <section style={contentSectionStyle}>
       <div style={sectionHeaderStyle}>
         <div>
-          <p style={eyebrowDarkStyle}>전체 흐름</p>
-          <h2 style={sectionTitleStyle}>고구려 로드맵</h2>
+          <p style={eyebrowDarkStyle}>{t.roadmap.eyebrow}</p>
+          <h2 style={sectionTitleStyle}>{t.roadmap.title}</h2>
         </div>
 
         <span style={pillStyle}>
@@ -633,10 +835,8 @@ function RoadmapView({
       </div>
 
       <div style={roadmapSummaryStyle}>
-        <strong>지금 보이는 것이 이 앱의 핵심 커리큘럼입니다.</strong>
-        <span>
-          퀴즈를 풀면 아래 노드가 하나씩 컬러로 해금됩니다.
-        </span>
+        <strong>{t.roadmap.summaryTitle}</strong>
+        <span>{t.roadmap.summaryText}</span>
 
         <div style={progressTrackLightStyle}>
           <div
@@ -713,16 +913,15 @@ function RoadmapView({
       <div style={selectedNodeBoxStyle}>
         {selectedNode ? (
           <RoadmapNodeDetail
+            t={t}
             node={selectedNode}
             owned={ownedCardIds.includes(selectedNode.card_id)}
             card={allCards.find((card) => card.id === selectedNode.card_id)}
           />
         ) : (
           <>
-            <strong>노드를 눌러보세요</strong>
-            <p>
-              각 퀘스트가 어떤 역사 흐름에 속하는지 확인할 수 있습니다.
-            </p>
+            <strong>{t.roadmap.tapNode}</strong>
+            <p>{t.roadmap.tapNodeDesc}</p>
           </>
         )}
       </div>
@@ -730,12 +929,12 @@ function RoadmapView({
   )
 }
 
-function RoadmapNodeDetail({ node, owned, card }) {
+function RoadmapNodeDetail({ t, node, owned, card }) {
   return (
     <div>
       <div style={nodeDetailTopStyle}>
         <span style={owned ? unlockedBadgeStyle : lockedBadgeStyle}>
-          {owned ? '해금 완료' : '미해금'}
+          {owned ? t.roadmap.unlocked : t.roadmap.locked}
         </span>
 
         <span style={nodeGroupBadgeStyle}>
@@ -744,7 +943,7 @@ function RoadmapNodeDetail({ node, owned, card }) {
       </div>
 
       <h3 style={{ margin: '10px 0 6px' }}>
-        {owned ? node.label : '아직 해금되지 않은 퀘스트'}
+        {owned ? node.label : t.roadmap.lockedQuest}
       </h3>
 
       <p style={{ margin: '0 0 8px', color: '#64748b', lineHeight: 1.45 }}>
@@ -754,13 +953,13 @@ function RoadmapNodeDetail({ node, owned, card }) {
       </p>
 
       <small style={{ color: '#6366f1', fontWeight: 800 }}>
-        {node.year_start ? `${node.year_start}년대 흐름` : '고구려 흐름'} · {node.category || '카드'}
+        {node.year_start ? `${node.year_start}${t.roadmap.yearFlow}` : 'Goguryeo'} · {node.category || '카드'}
       </small>
     </div>
   )
 }
 
-function RewardCard({ card }) {
+function RewardCard({ t, card }) {
   const rarityStyle = getRarityStyle(card?.rarity)
 
   return (
@@ -770,7 +969,7 @@ function RewardCard({ card }) {
           {card?.rarity || 'N'}
         </span>
 
-        <span style={rewardLabelStyle}>획득 보상</span>
+        <span style={rewardLabelStyle}>{t.quiz.reward}</span>
       </div>
 
       <CardImage card={card} size="large" />
@@ -793,6 +992,7 @@ function RewardCard({ card }) {
 }
 
 function CollectionView({
+  t,
   ownedCards,
   lockedCards,
   ownedCount,
@@ -803,8 +1003,8 @@ function CollectionView({
     <section style={contentSectionStyle}>
       <div style={sectionHeaderStyle}>
         <div>
-          <p style={eyebrowDarkStyle}>수집 현황</p>
-          <h2 style={sectionTitleStyle}>내 도감</h2>
+          <p style={eyebrowDarkStyle}>{t.collection.eyebrow}</p>
+          <h2 style={sectionTitleStyle}>{t.collection.title}</h2>
         </div>
 
         <span style={pillStyle}>
@@ -814,18 +1014,18 @@ function CollectionView({
 
       <div style={collectionSummaryStyle}>
         <strong>
-          {ownedCount}종 획득
+          {ownedCount}{t.collection.acquired}
         </strong>
         <span>
-          전체 {totalCount}종 중 {lockedCards.length}종 미발견
+          {t.total} {totalCount} · {t.collection.undiscoveredCount} {lockedCards.length}
         </span>
       </div>
 
-      <h3 style={subTitleStyle}>획득한 카드</h3>
+      <h3 style={subTitleStyle}>{t.collection.owned}</h3>
 
       {ownedCards.length === 0 ? (
         <div style={emptyBoxStyle}>
-          아직 획득한 카드가 없습니다.
+          {t.collection.empty}
         </div>
       ) : (
         <div style={cardGridStyle}>
@@ -835,16 +1035,16 @@ function CollectionView({
         </div>
       )}
 
-      <h3 style={subTitleStyle}>미획득 카드</h3>
+      <h3 style={subTitleStyle}>{t.collection.locked}</h3>
 
       {lockedCards.length === 0 ? (
         <div style={completeBoxStyle}>
-          고구려 도감을 모두 완성했습니다!
+          {t.collection.complete}
         </div>
       ) : (
         <div style={cardGridStyle}>
           {lockedCards.map((card) => (
-            <LockedCard key={card.id} card={card} />
+            <LockedCard key={card.id} t={t} card={card} />
           ))}
         </div>
       )}
@@ -924,7 +1124,7 @@ function CardImage({ card, size }) {
   )
 }
 
-function LockedCard({ card }) {
+function LockedCard({ t, card }) {
   return (
     <div style={lockedCardStyle}>
       <div style={lockedGlowStyle} />
@@ -938,17 +1138,20 @@ function LockedCard({ card }) {
       </h3>
 
       <p style={lockedTextStyle}>
-        {card?.category || '역사'} 카테고리의 미발견 카드
+        {card?.category || t.collection.undiscovered} · {t.collection.undiscovered}
       </p>
 
       <small style={lockedHintStyle}>
-        퀴즈를 풀어 해금
+        {t.collection.unlockHint}
       </small>
     </div>
   )
 }
 
 function ProfileView({
+  t,
+  appLanguage,
+  changeAppLanguage,
   user,
   profile,
   ownedCount,
@@ -973,41 +1176,69 @@ function ProfileView({
         </h2>
 
         <p style={{ margin: 0, color: '#64748b' }}>
-          고구려 로드맵 탐험가
+          {t.profile.explorer}
         </p>
       </div>
 
       <div style={profileStatGridStyle}>
         <div style={profileStatStyle}>
           <strong>{profile?.level ?? 1}</strong>
-          <span>레벨</span>
+          <span>{t.profile.level}</span>
         </div>
 
         <div style={profileStatStyle}>
           <strong>{profile?.exp ?? 0}</strong>
-          <span>경험치</span>
+          <span>{t.profile.exp}</span>
         </div>
 
         <div style={profileStatStyle}>
           <strong>{ownedCount}/{totalCount}</strong>
-          <span>퀘스트</span>
+          <span>{t.profile.quest}</span>
         </div>
 
         <div style={profileStatStyle}>
           <strong>{collectionRate}%</strong>
-          <span>완성도</span>
+          <span>{t.profile.completion}</span>
+        </div>
+      </div>
+
+      <div style={settingsBoxStyle}>
+        <div style={settingRowStyle}>
+          <div>
+            <strong>{t.profile.appLanguage}</strong>
+            <p style={settingDescStyle}>
+              {appLanguage === 'ko' ? '한국어' : 'English'}
+            </p>
+          </div>
+
+          <button onClick={changeAppLanguage} style={smallButtonStyle}>
+            🌐 {appLanguage === 'ko' ? 'EN' : 'KO'}
+          </button>
+        </div>
+
+        <div style={settingRowStyle}>
+          <div>
+            <strong>{t.profile.studyLanguage}</strong>
+            <p style={settingDescStyle}>
+              {t.profile.studyLanguageValue}
+            </p>
+          </div>
+
+          <span style={comingSoonBadgeStyle}>
+            MVP
+          </span>
         </div>
       </div>
 
       <div style={noteBoxStyle}>
-        <strong>서비스 확장 방향</strong>
+        <strong>{t.profile.expansionTitle}</strong>
         <p>
-          고구려 로드맵을 완성하면 백제, 신라, 고려, 조선 로드맵으로 확장할 수 있습니다.
+          {t.profile.expansionText}
         </p>
       </div>
 
       <button onClick={logout} style={logoutButtonStyle}>
-        로그아웃
+        {t.profile.logout}
       </button>
     </section>
   )
@@ -1188,6 +1419,17 @@ const heroTextStyle = {
   margin: '12px 0 18px',
   color: '#e5e7eb',
   lineHeight: 1.5
+}
+
+const languageButtonStyle = {
+  border: 0,
+  borderRadius: '999px',
+  padding: '8px 10px',
+  background: 'rgba(255,255,255,0.14)',
+  color: 'white',
+  fontWeight: 900,
+  fontSize: '12px',
+  cursor: 'pointer'
 }
 
 const levelBadgeStyle = {
@@ -1759,6 +2001,48 @@ const profileStatStyle = {
   flexDirection: 'column',
   gap: '4px',
   textAlign: 'center'
+}
+
+const settingsBoxStyle = {
+  marginTop: '16px',
+  padding: '16px',
+  borderRadius: '22px',
+  background: 'white',
+  border: '1px solid #e5e7eb',
+  display: 'grid',
+  gap: '12px'
+}
+
+const settingRowStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: '12px'
+}
+
+const settingDescStyle = {
+  margin: '4px 0 0',
+  color: '#64748b',
+  fontSize: '13px'
+}
+
+const smallButtonStyle = {
+  border: 0,
+  borderRadius: '999px',
+  padding: '8px 12px',
+  background: '#111827',
+  color: 'white',
+  fontWeight: 900,
+  cursor: 'pointer'
+}
+
+const comingSoonBadgeStyle = {
+  padding: '6px 10px',
+  borderRadius: '999px',
+  background: '#fef3c7',
+  color: '#92400e',
+  fontSize: '12px',
+  fontWeight: 900
 }
 
 const noteBoxStyle = {
