@@ -1132,7 +1132,13 @@ function CardImage({ card, size, appLanguage }) {
           height
         }}
       >
-        {card.image_url}
+        {React.createElement('img', {
+          src: card.image_url,
+          alt: altText,
+          style: styles.cardImage,
+          loading: 'lazy',
+          referrerPolicy: 'no-referrer'
+        })}
       </div>
     )
   }
