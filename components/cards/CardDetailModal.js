@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import CardImage from './CardImage'
 import {
   cardName,
@@ -17,12 +18,17 @@ export default function CardDetailModal({
   onClose
 }) {
   const targetCard = card || item?.card
+  const [detailLanguage, setDetailLanguage] = useState(appLanguage)
 
   if (!targetCard) return null
 
   const count = item?.count || 1
   const rarityStyle = getRarityStyle(targetCard?.rarity)
-  const isEnglish = appLanguage === 'en'
+  const isEnglish = detailLanguage === 'en'
+
+  const toggleDetailLanguage = () => {
+    setDetailLanguage((current) => (current === 'ko' ? 'en' : 'ko'))
+  }
 
   return (
     <div style={styles.overlay} onClick={onClose}>
@@ -41,27 +47,37 @@ export default function CardDetailModal({
             {targetCard?.rarity || 'N'}
           </span>
 
-          <button type="button" onClick={onClose} style={styles.closeButton}>
-            ✕
-          </button>
+          <div style={styles.topActions}>
+            <button
+              type="button"
+              onClick={toggleDetailLanguage}
+              style={styles.languageButton}
+            >
+              🌐 {detailLanguage.toUpperCase()}
+            </button>
+
+            <button type="button" onClick={onClose} style={styles.closeButton}>
+              ✕
+            </button>
+          </div>
         </div>
 
         <div style={styles.cardFrame}>
           <CardImage
             card={targetCard}
             size="hero"
-            appLanguage={appLanguage}
+            appLanguage={detailLanguage}
             radius={22}
           />
         </div>
 
         <div style={styles.content}>
           <h2 style={styles.title}>
-            {cardName(targetCard, appLanguage)}
+            {cardName(targetCard, detailLanguage)}
           </h2>
 
           <p style={styles.meta}>
-            {cardEra(targetCard, appLanguage)} · {cardCategory(targetCard, appLanguage)}
+            {cardEra(targetCard, detailLanguage)} · {cardCategory(targetCard, detailLanguage)}
           </p>
 
           <div style={styles.infoRow}>
@@ -90,19 +106,19 @@ export default function CardDetailModal({
               {isEnglish ? 'Card Story' : '카드 설명'}
             </h3>
             <p>
-              {cardDetail(targetCard, appLanguage) || cardFlavor(targetCard, appLanguage)}
+              {cardDetail(targetCard, detailLanguage) || cardFlavor(targetCard, detailLanguage)}
             </p>
           </section>
 
           <section style={styles.section}>
             <h3>
-              {isEnglish ? 'Language Note' : '언어 학습 포인트'}
+              {isEnglish ? 'Language Learning Point' : '언어 학습 포인트'}
             </h3>
 
             <div style={styles.languageBox}>
               <strong>
                 {isEnglish
-                  ? 'Learn the history through a sentence.'
+                  ? 'Learn this historical concept through a sentence.'
                   : '이 역사 개념을 문장으로 익혀보세요.'}
               </strong>
 
@@ -120,7 +136,7 @@ export default function CardDetailModal({
             </h3>
 
             <p>
-              {buildRarityDescription(targetCard?.rarity, appLanguage)}
+              {buildRarityDescription(targetCard?.rarity, detailLanguage)}
             </p>
           </section>
         </div>
@@ -223,11 +239,28 @@ const styles = {
     marginBottom: '12px'
   },
 
+  topActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  },
+
   rarityBadge: {
     padding: '6px 11px',
     borderRadius: '999px',
     fontSize: '13px',
     fontWeight: 900
+  },
+
+  languageButton: {
+    border: '1px solid rgba(255,255,255,0.16)',
+    borderRadius: '999px',
+    padding: '8px 11px',
+    background: 'rgba(15,23,42,0.75)',
+    color: '#f8fafc',
+    fontSize: '12px',
+    fontWeight: 900,
+    cursor: 'pointer'
   },
 
   closeButton: {
