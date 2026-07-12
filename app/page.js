@@ -3,6 +3,73 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+const WORLD_DATA = [
+  {
+    id: 'korea',
+    name: '🇰🇷 한국사',
+    progress: 18,
+    eras: [
+      {
+        id: 'three_kingdoms',
+        name: '삼국시대',
+        routes: [
+          {
+            id: 'goguryeo',
+            name: '🏰 고구려',
+            enabled: true
+          },
+          {
+            id: 'baekje',
+            name: '🏯 백제',
+            enabled: false
+          },
+          {
+            id: 'silla',
+            name: '🟢 신라',
+            enabled: false
+          },
+          {
+            id: 'gaya',
+            name: '🌊 가야',
+            enabled: false
+          }
+        ]
+      },
+      {
+        id: 'goryeo',
+        name: '고려',
+        routes: []
+      },
+      {
+        id: 'joseon',
+        name: '조선',
+        routes: []
+      }
+    ]
+  },
+
+  {
+    id: 'china',
+    name: '🇨🇳 중국사',
+    progress: 0,
+    comingSoon: true
+  },
+
+  {
+    id: 'japan',
+    name: '🇯🇵 일본사',
+    progress: 0,
+    comingSoon: true
+  },
+
+  {
+    id: 'world',
+    name: '🌍 세계사',
+    progress: 0,
+    comingSoon: true
+  }
+]
+
 const UI = {
   ko: {
     appTitle: 'Hi-Story',
@@ -216,6 +283,9 @@ export default function Home() {
   const [selectedNode, setSelectedNode] = useState(null)
 
   const [activeTab, setActiveTab] = useState('quiz')
+  const [selectedSubject, setSelectedSubject] = useState(null)
+  const [selectedEra, setSelectedEra] = useState(null)
+  const [selectedRoute, setSelectedRoute] = useState(null)
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
 
