@@ -1151,19 +1151,6 @@ function CardImage({ card, size }) {
   )
 }
 
-  return (
-    <div
-      style={{
-        ...cardImagePlaceholderStyle,
-        height,
-        fontSize
-      }}
-    >
-      {getCardIcon(card?.category)}
-    </div>
-  )
-}
-
 function LockedCard({ t, appLanguage, card }) {
   return (
     <div style={lockedCardStyle}>
