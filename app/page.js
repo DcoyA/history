@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+const WORLD_MAP_IMAGE_URL = 'https://tvnzwteynxjhtznxwagh.supabase.co/storage/v1/object/public/cards/ui/world-map-dark.png'
+
 const WORLD_DATA = [
   {
     id: 'korea',
@@ -816,53 +818,191 @@ function WorldMapScreen({
 }) {
   const isEnglish = appLanguage === 'en'
   const koreaProgress = totalCount > 0 ? Math.round((ownedCount / totalCount) * 100) : 0
+  const [mapZoom, setMapZoom] = useState(1.2)
+  const [mapPosition, setMapPosition] = useState({ x: -190, y: -32 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [hoveredRegion, setHoveredRegion] = useState(null)
+
+  const mapRegions = [
+    {
+      id: 'world',
+      flag: '🌍',
+      labelKo: '세계사',
+      labelEn: 'World',
+      x: 23,
+      y: 42,
+      enabled: false
+    },
+    {
+      id: 'china',
+      flag: '🇨🇳',
+      labelKo: '중국사',
+      labelEn: 'China',
+      x: 63,
+      y: 49,
+      enabled: false
+    },
+    {
+      id: 'korea',
+      flag: '🇰🇷',
+      labelKo: '한국사',
+      labelEn: 'Korea',
+      x: 72,
+      y: 47,
+      enabled: true
+    },
+    {
+      id: 'japan',
+      flag: '🇯🇵',
+      labelKo: '일본사',
+      labelEn: 'Japan',
+      x: 80,
+      y: 45,
+      enabled: false
+    }
+  ]
+
+  const startDrag = (clientX, clientY) => {
+    setIsDragging(true)
+    setDragStart({
+      x: clientX - mapPosition.x,
+      y: clientY - mapPosition.y
+    })
+  }
+
+  const moveDrag = (clientX, clientY) => {
+    if (!isDragging) return
+
+    setMapPosition({
+      x: clientX - dragStart.x,
+      y: clientY - dragStart.y
+    })
+  }
+
+  const stopDrag = () => {
+    setIsDragging(false)
+  }
+
+  const zoomIn = () => {
+    setMapZoom((value) => Math.min(2.1, Number((value + 0.15).toFixed(2))))
+  }
+
+  const zoomOut = () => {
+    setMapZoom((value) => Math.max(0.85, Number((value - 0.15).toFixed(2))))
+  }
+
+  const resetMap = () => {
+    setMapZoom(1.2)
+    setMapPosition({ x: -190, y: -32 })
+  }
+
+  const selectRegion = (region) => {
+    if (!region.enabled) return
+
+    setSelectedSubject(region.id)
+    setSelectedEra(null)
+    setSelectedRoute(null)
+    setCurrentScreen('timeline')
+  }
 
   return (
     <section style={styles.section}>
       <div style={styles.sectionHeader}>
         <div>
           <p style={styles.goldEyebrow}>{isEnglish ? 'World Map' : '세계 지도'}</p>
-          <h2 style={styles.sectionTitle}>{isEnglish ? 'Choose a Region' : '지역을 선택하세요'}</h2>
+          <h2 style={styles.sectionTitle}>{isEnglish ? 'Choose a Region' : '지도에서 지역을 선택하세요'}</h2>
         </div>
       </div>
 
       <div style={mapPanelStyle}>
-        <div style={mapOrbStyle}>
-          <button
-            style={{ ...mapNodeStyle, left: '58%', top: '46%' }}
-            onClick={() => {
-              setSelectedSubject('korea')
-              setSelectedEra(null)
-              setSelectedRoute(null)
-              setCurrentScreen('timeline')
+        <div style={mapToolbarStyle}>
+          <span>{isEnglish ? 'Drag map · Zoom controls' : '지도를 드래그하고 확대/축소하세요'}</span>
+
+          <div style={mapToolButtonsStyle}>
+            <button onClick={zoomOut} style={mapToolButtonStyle}>−</button>
+            <button onClick={zoomIn} style={mapToolButtonStyle}>＋</button>
+            <button onClick={resetMap} style={mapToolButtonStyle}>Reset</button>
+          </div>
+        </div>
+
+        <div
+          style={mapViewportStyle}
+          onMouseDown={(event) => startDrag(event.clientX, event.clientY)}
+          onMouseMove={(event) => moveDrag(event.clientX, event.clientY)}
+          onMouseUp={stopDrag}
+          onMouseLeave={stopDrag}
+          onTouchStart={(event) => {
+            const touch = event.touches[0]
+            startDrag(touch.clientX, touch.clientY)
+          }}
+          onTouchMove={(event) => {
+            const touch = event.touches[0]
+            moveDrag(touch.clientX, touch.clientY)
+          }}
+          onTouchEnd={stopDrag}
+        >
+          <div
+            style={{
+              ...mapLayerStyle,
+              transform: `translate(${mapPosition.x}px, ${mapPosition.y}px) scale(${mapZoom})`,
+              cursor: isDragging ? 'grabbing' : 'grab'
             }}
           >
-            🇰🇷
-            <small>{isEnglish ? 'Korea' : '한국사'}</small>
-          </button>
+            {React.createElement('img', {
+              src: WORLD_MAP_IMAGE_URL,
+              alt: 'Hi-Story world map',
+              style: mapImageStyle,
+              draggable: false
+            })}
 
-          <button disabled style={{ ...mapNodeStyle, left: '44%', top: '42%', opacity: 0.45 }}>
-            🇨🇳
-            <small>{isEnglish ? 'China' : '중국사'}</small>
-          </button>
+            {mapRegions.map((region) => {
+              const active = hoveredRegion === region.id
+              const label = isEnglish ? region.labelEn : region.labelKo
 
-          <button disabled style={{ ...mapNodeStyle, left: '72%', top: '39%', opacity: 0.45 }}>
-            🇯🇵
-            <small>{isEnglish ? 'Japan' : '일본사'}</small>
-          </button>
-
-          <button disabled style={{ ...mapNodeStyle, left: '20%', top: '32%', opacity: 0.45 }}>
-            🌍
-            <small>{isEnglish ? 'World' : '세계사'}</small>
-          </button>
+              return (
+                <button
+                  key={region.id}
+                  disabled={!region.enabled}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    selectRegion(region)
+                  }}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onMouseEnter={() => setHoveredRegion(region.id)}
+                  onMouseLeave={() => setHoveredRegion(null)}
+                  onFocus={() => setHoveredRegion(region.id)}
+                  onBlur={() => setHoveredRegion(null)}
+                  style={{
+                    ...mapRegionButtonStyle,
+                    left: `${region.x}%`,
+                    top: `${region.y}%`,
+                    opacity: region.enabled ? 1 : 0.55,
+                    transform: `translate(-50%, -50%) scale(${active ? 1.12 : 1})`,
+                    borderColor: active ? '#facc15' : region.enabled ? 'rgba(214,179,90,0.55)' : 'rgba(148,163,184,0.28)',
+                    boxShadow: active
+                      ? '0 0 0 4px rgba(250,204,21,0.18), 0 16px 30px rgba(0,0,0,0.48)'
+                      : region.enabled
+                        ? '0 0 22px rgba(214,179,90,0.24), 0 10px 22px rgba(0,0,0,0.38)'
+                        : '0 8px 20px rgba(0,0,0,0.28)',
+                    cursor: region.enabled ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  <span style={flagBubbleStyle}>{region.flag}</span>
+                  <strong>{label}</strong>
+                  <small>{region.enabled ? (isEnglish ? 'Open' : '입장') : (isEnglish ? 'Soon' : '준비중')}</small>
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 
       <div style={worldIntroStyle}>
-        <strong>{isEnglish ? 'A map-first history platform.' : '지도에서 시작하는 역사 언어학습 플랫폼입니다.'}</strong>
+        <strong>{isEnglish ? 'A map-first history language platform.' : '지도에서 시작하는 역사 언어학습 플랫폼입니다.'}</strong>
         <p>
           {isEnglish
-            ? 'The demo opens Korea → Three Kingdoms → Goguryeo, while other regions are shown as expandable content packs.'
+            ? 'The demo opens Korea → Three Kingdoms → Goguryeo, while other regions are visible as future content packs.'
             : '시연은 한국사 → 삼국시대 → 고구려로 진입하지만, 중국사·일본사·세계사까지 확장되는 구조를 먼저 보여줍니다.'}
         </p>
         <div style={miniProgressTrackStyle}>
@@ -873,6 +1013,7 @@ function WorldMapScreen({
     </section>
   )
 }
+
 
 function TimelineScreen({ selectedSubject, setSelectedEra, setCurrentScreen }) {
   const subject = WORLD_DATA.find((item) => item.id === selectedSubject) || WORLD_DATA[0]
@@ -1800,41 +1941,8 @@ const worldIntroStyle = {
   marginBottom: '14px'
 }
 
-const mapPanelStyle = {
-  padding: '14px',
-  borderRadius: '28px',
-  background: 'linear-gradient(135deg, #020617, #0f172a)',
-  border: '1px solid rgba(214,179,90,0.22)',
-  marginBottom: '14px'
-}
 
-const mapOrbStyle = {
-  position: 'relative',
-  height: '330px',
-  borderRadius: '24px',
-  overflow: 'hidden',
-  background: 'radial-gradient(circle at 50% 48%, #1d4ed8 0%, #0f172a 34%, #020617 68%)',
-  boxShadow: 'inset 0 0 60px rgba(0,0,0,0.58)'
-}
 
-const mapNodeStyle = {
-  position: 'absolute',
-  transform: 'translate(-50%, -50%)',
-  minWidth: '78px',
-  border: '1px solid rgba(214,179,90,0.35)',
-  borderRadius: '18px',
-  padding: '9px 8px',
-  background: 'rgba(15,23,42,0.78)',
-  color: '#f8fafc',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: '2px',
-  fontSize: '22px',
-  fontWeight: 900,
-  cursor: 'pointer',
-  boxShadow: '0 12px 24px rgba(0,0,0,0.35)'
-}
 
 const worldGridStyle = {
   display: 'grid',
@@ -1974,6 +2082,105 @@ const difficultySampleStyle = {
   color: '#bfdbfe',
   fontSize: '13px',
   lineHeight: 1.4
+}
+
+
+const mapPanelStyle = {
+  padding: '14px',
+  borderRadius: '28px',
+  background: 'linear-gradient(135deg, #020617, #0f172a)',
+  border: '1px solid rgba(214,179,90,0.22)',
+  marginBottom: '14px',
+  overflow: 'hidden'
+}
+
+const mapToolbarStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: '10px',
+  marginBottom: '10px',
+  color: '#cbd5e1',
+  fontSize: '12px',
+  fontWeight: 800
+}
+
+const mapToolButtonsStyle = {
+  display: 'flex',
+  gap: '6px',
+  flex: '0 0 auto'
+}
+
+const mapToolButtonStyle = {
+  border: '1px solid rgba(214,179,90,0.3)',
+  borderRadius: '999px',
+  padding: '6px 9px',
+  background: 'rgba(15,23,42,0.92)',
+  color: '#facc15',
+  fontWeight: 900,
+  cursor: 'pointer',
+  fontSize: '12px'
+}
+
+const mapViewportStyle = {
+  position: 'relative',
+  height: '360px',
+  borderRadius: '24px',
+  overflow: 'hidden',
+  background: '#020617',
+  border: '1px solid rgba(148,163,184,0.18)',
+  touchAction: 'none',
+  userSelect: 'none'
+}
+
+const mapLayerStyle = {
+  position: 'absolute',
+  left: 0,
+  top: 0,
+  width: '720px',
+  height: '405px',
+  transformOrigin: 'center center',
+  transition: 'transform 0.06s linear'
+}
+
+const mapImageStyle = {
+  position: 'absolute',
+  inset: 0,
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+  display: 'block',
+  pointerEvents: 'none'
+}
+
+const mapRegionButtonStyle = {
+  position: 'absolute',
+  minWidth: '86px',
+  border: '1px solid rgba(214,179,90,0.45)',
+  borderRadius: '18px',
+  padding: '8px 8px',
+  background: 'rgba(15,23,42,0.82)',
+  color: '#f8fafc',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '2px',
+  fontSize: '13px',
+  fontWeight: 900,
+  transition: 'transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease',
+  WebkitTapHighlightColor: 'transparent'
+}
+
+const flagBubbleStyle = {
+  width: '34px',
+  height: '34px',
+  borderRadius: '999px',
+  background: 'rgba(255,255,255,0.12)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: '22px',
+  marginBottom: '2px'
 }
 
 const styles = {
