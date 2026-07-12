@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import CollectionTabView from '../components/cards/CollectionTab'
 
 const WORLD_MAP_IMAGE_URL = 'https://tvnzwteynxjhtznxwagh.supabase.co/storage/v1/object/public/cards/ui/world-map-dark.png'
 
@@ -825,7 +826,7 @@ export default function Home() {
         )}
 
         {user && currentScreen === 'goguryeo' && activeTab === 'collection' && (
-          <CollectionTab
+          <CollectionTabView
             t={t}
             appLanguage={appLanguage}
             ownedCards={ownedCards}
