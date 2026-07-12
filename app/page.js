@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-const ui = {
+const UI = {
   ko: {
-    title: 'Hi-Story',
+    appTitle: 'Hi-Story',
     subtitle: '역사로 언어를 배우는 카드 수집 RPG',
     start: 'Google로 시작하기',
     progress: '고구려 진행도',
@@ -31,7 +31,8 @@ const ui = {
       newCard: '새 카드 획득',
       countUp: '카드 수량 증가',
       rewardError: '보상 카드 정보를 불러오지 못했습니다.',
-      saveError: '카드 저장 중 오류가 발생했습니다.'
+      saveError: '카드 저장 중 오류가 발생했습니다.',
+      noQuiz: '등록된 퀴즈가 없습니다.'
     },
     roadmap: {
       eyebrow: '학습 여정',
@@ -65,11 +66,15 @@ const ui = {
     },
     status: {
       loading: '불러오는 중...',
-      noQuiz: '등록된 퀴즈가 없습니다.'
+      userError: '사용자 정보를 불러오지 못했습니다.',
+      cardsError: '카드 정보를 불러오지 못했습니다.',
+      lessonsError: '퀴즈 정보를 불러오지 못했습니다.',
+      ownedError: '보유 카드 정보를 불러오지 못했습니다.'
     }
   },
+
   en: {
-    title: 'Hi-Story',
+    appTitle: 'Hi-Story',
     subtitle: 'Learn languages through history cards',
     start: 'Continue with Google',
     progress: 'Goguryeo Progress',
@@ -95,7 +100,8 @@ const ui = {
       newCard: 'New Card Unlocked',
       countUp: 'Card Count Increased',
       rewardError: 'Could not load the reward card.',
-      saveError: 'There was an error saving the card.'
+      saveError: 'There was an error saving the card.',
+      noQuiz: 'No quiz has been added yet.'
     },
     roadmap: {
       eyebrow: 'Learning Journey',
@@ -129,7 +135,10 @@ const ui = {
     },
     status: {
       loading: 'Loading...',
-      noQuiz: 'No quiz has been added yet.'
+      userError: 'Could not load user information.',
+      cardsError: 'Could not load card data.',
+      lessonsError: 'Could not load quiz data.',
+      ownedError: 'Could not load your cards.'
     }
   }
 }
@@ -192,7 +201,7 @@ function nodeGroup(node, lang) {
 
 export default function Home() {
   const [appLanguage, setAppLanguage] = useState('ko')
-  const t = ui[appLanguage] || ui.ko
+  const t = UI[appLanguage] || UI.ko
 
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
@@ -200,12 +209,14 @@ export default function Home() {
   const [allCards, setAllCards] = useState([])
   const [roadmapNodes, setRoadmapNodes] = useState([])
   const [ownedCards, setOwnedCards] = useState([])
+
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0)
   const [selectedChoice, setSelectedChoice] = useState(null)
   const [resultMessage, setResultMessage] = useState('')
   const [rewardMessage, setRewardMessage] = useState('')
   const [lastRewardCard, setLastRewardCard] = useState(null)
   const [selectedNode, setSelectedNode] = useState(null)
+
   const [activeTab, setActiveTab] = useState('quiz')
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
@@ -233,7 +244,7 @@ export default function Home() {
 
     if (userError) {
       console.error(userError)
-      setErrorMessage('사용자 정보를 불러오지 못했습니다.')
+      setErrorMessage(t.status.userError)
       setLoading(false)
       return
     }
@@ -251,7 +262,7 @@ export default function Home() {
       currentUser.user_metadata?.full_name ||
       currentUser.email
 
-    const { data: savedProfile, error: profileError } = await supabase
+    const { data: savedProfile } = await supabase
       .from('profiles')
       .upsert({
         id: currentUser.id,
@@ -262,7 +273,7 @@ export default function Home() {
       .select()
       .single()
 
-    if (!profileError) {
+    if (savedProfile) {
       setProfile(savedProfile)
     }
 
@@ -282,7 +293,7 @@ export default function Home() {
 
     if (error) {
       console.error(error)
-      setErrorMessage('카드 정보를 불러오지 못했습니다.')
+      setErrorMessage(t.status.cardsError)
       return
     }
 
@@ -297,7 +308,7 @@ export default function Home() {
 
     if (error) {
       console.error(error)
-      setErrorMessage('퀴즈 정보를 불러오지 못했습니다.')
+      setErrorMessage(t.status.lessonsError)
       return
     }
 
@@ -328,7 +339,7 @@ export default function Home() {
 
     if (userCardsError) {
       console.error(userCardsError)
-      setErrorMessage('보유 카드 정보를 불러오지 못했습니다.')
+      setErrorMessage(t.status.ownedError)
       return
     }
 
@@ -346,7 +357,7 @@ export default function Home() {
 
     if (cardsError) {
       console.error(cardsError)
-      setErrorMessage('카드 상세 정보를 불러오지 못했습니다.')
+      setErrorMessage(t.status.ownedError)
       return
     }
 
@@ -387,7 +398,7 @@ export default function Home() {
     setRewardMessage('')
     setLastRewardCard(null)
 
-    const isCorrect = choiceNumber === currentLesson.answer
+    const isCorrect = Number(choiceNumber) === Number(currentLesson.answer)
 
     if (!isCorrect) {
       setResultMessage(t.quiz.wrong)
@@ -486,9 +497,9 @@ export default function Home() {
 
   if (loading) {
     return (
-      <main style={pageStyle}>
-        <div style={phoneShellStyle}>
-          <h1 style={{ marginTop: 40 }}>{t.title}</h1>
+      <main style={styles.page}>
+        <div style={styles.shell}>
+          <h1>{t.appTitle}</h1>
           <p>{t.status.loading}</p>
         </div>
       </main>
@@ -504,64 +515,64 @@ export default function Home() {
     totalCount > 0 ? Math.round((ownedCount / totalCount) * 100) : 0
 
   return (
-    <main style={pageStyle}>
-      <div style={phoneShellStyle}>
-        <section style={heroStyle}>
-          <div style={heroTopStyle}>
+    <main style={styles.page}>
+      <div style={styles.shell}>
+        <section style={styles.hero}>
+          <div style={styles.heroTop}>
             <div>
-              <p style={heroEyebrowStyle}>LANGUAGE THROUGH HISTORY</p>
-              <h1 style={titleStyle}>{t.title}</h1>
+              <p style={styles.heroEyebrow}>LANGUAGE THROUGH HISTORY</p>
+              <h1 style={styles.title}>{t.appTitle}</h1>
             </div>
 
-            <div style={heroButtonGroupStyle}>
-              <button onClick={changeAppLanguage} style={languageButtonStyle}>
+            <div style={styles.heroButtons}>
+              <button onClick={changeAppLanguage} style={styles.langButton}>
                 🌐 {appLanguage.toUpperCase()}
               </button>
 
               {user && (
-                <div style={levelBadgeStyle}>
+                <div style={styles.levelBadge}>
                   Lv. {profile?.level ?? 1}
                 </div>
               )}
             </div>
           </div>
 
-          <p style={heroTextStyle}>
+          <p style={styles.heroText}>
             {t.subtitle}
           </p>
 
           {!user ? (
-            <button onClick={login} style={goldButtonStyle}>
+            <button onClick={login} style={styles.goldButton}>
               {t.start}
             </button>
           ) : (
             <>
-              <div style={progressHeaderStyle}>
+              <div style={styles.progressHeader}>
                 <span>{t.progress}</span>
                 <strong>{collectionRate}%</strong>
               </div>
 
-              <div style={progressTrackStyle}>
+              <div style={styles.progressTrack}>
                 <div
                   style={{
-                    ...progressFillStyle,
+                    ...styles.progressFill,
                     width: `${collectionRate}%`
                   }}
                 />
               </div>
 
-              <div style={miniStatRowStyle}>
-                <div style={miniStatStyle}>
+              <div style={styles.statRow}>
+                <div style={styles.statBox}>
                   <strong>{ownedCount}</strong>
                   <span>{t.completed}</span>
                 </div>
 
-                <div style={miniStatStyle}>
+                <div style={styles.statBox}>
                   <strong>{lockedCards.length}</strong>
                   <span>{t.remaining}</span>
                 </div>
 
-                <div style={miniStatStyle}>
+                <div style={styles.statBox}>
                   <strong>{totalCount}</strong>
                   <span>{t.total}</span>
                 </div>
@@ -571,13 +582,13 @@ export default function Home() {
         </section>
 
         {errorMessage && (
-          <div style={errorBoxStyle}>
+          <div style={styles.errorBox}>
             {errorMessage}
           </div>
         )}
 
         {user && activeTab === 'quiz' && (
-          <QuizView
+          <QuizTab
             t={t}
             appLanguage={appLanguage}
             currentLesson={currentLesson}
@@ -593,7 +604,7 @@ export default function Home() {
         )}
 
         {user && activeTab === 'roadmap' && (
-          <RoadmapView
+          <RoadmapTab
             t={t}
             appLanguage={appLanguage}
             roadmapNodes={roadmapNodes}
@@ -608,7 +619,7 @@ export default function Home() {
         )}
 
         {user && activeTab === 'collection' && (
-          <CollectionView
+          <CollectionTab
             t={t}
             appLanguage={appLanguage}
             ownedCards={ownedCards}
@@ -620,7 +631,7 @@ export default function Home() {
         )}
 
         {user && activeTab === 'profile' && (
-          <ProfileView
+          <ProfileTab
             t={t}
             appLanguage={appLanguage}
             changeAppLanguage={changeAppLanguage}
@@ -634,35 +645,23 @@ export default function Home() {
         )}
 
         {user && (
-          <nav style={bottomNavStyle}>
-            <button
-              onClick={() => setActiveTab('quiz')}
-              style={tabButtonStyle(activeTab === 'quiz')}
-            >
+          <nav style={styles.bottomNav}>
+            <button onClick={() => setActiveTab('quiz')} style={tabStyle(activeTab === 'quiz')}>
               <span>⚔️</span>
               <small>{t.tabs.quiz}</small>
             </button>
 
-            <button
-              onClick={() => setActiveTab('roadmap')}
-              style={tabButtonStyle(activeTab === 'roadmap')}
-            >
+            <button onClick={() => setActiveTab('roadmap')} style={tabStyle(activeTab === 'roadmap')}>
               <span>🗺️</span>
               <small>{t.tabs.roadmap}</small>
             </button>
 
-            <button
-              onClick={() => setActiveTab('collection')}
-              style={tabButtonStyle(activeTab === 'collection')}
-            >
+            <button onClick={() => setActiveTab('collection')} style={tabStyle(activeTab === 'collection')}>
               <span>📚</span>
               <small>{t.tabs.collection}</small>
             </button>
 
-            <button
-              onClick={() => setActiveTab('profile')}
-              style={tabButtonStyle(activeTab === 'profile')}
-            >
+            <button onClick={() => setActiveTab('profile')} style={tabStyle(activeTab === 'profile')}>
               <span>👤</span>
               <small>{t.tabs.profile}</small>
             </button>
@@ -673,7 +672,7 @@ export default function Home() {
   )
 }
 
-function QuizView({
+function QuizTab({
   t,
   appLanguage,
   currentLesson,
@@ -688,64 +687,61 @@ function QuizView({
 }) {
   if (!currentLesson) {
     return (
-      <section style={contentSectionStyle}>
+      <section style={styles.section}>
         <h2>{t.quiz.title}</h2>
-        <p>{t.status.noQuiz}</p>
+        <p>{t.quiz.noQuiz}</p>
       </section>
     )
   }
 
   const answeredCorrectly = resultMessage === t.quiz.correct
-  const currentAnswer = Number(currentLesson.answer)
 
   return (
-    <section style={contentSectionStyle}>
-      <div style={sectionHeaderStyle}>
+    <section style={styles.section}>
+      <div style={styles.sectionHeader}>
         <div>
-          <p style={eyebrowGoldStyle}>{t.quiz.eyebrow}</p>
-          <h2 style={sectionTitleStyle}>{t.quiz.title}</h2>
+          <p style={styles.goldEyebrow}>{t.quiz.eyebrow}</p>
+          <h2 style={styles.sectionTitle}>{t.quiz.title}</h2>
         </div>
 
-        <span style={darkPillStyle}>
+        <span style={styles.pill}>
           {currentLessonIndex + 1} / {lessons.length}
         </span>
       </div>
 
-      <div style={languageLessonBoxStyle}>
+      <div style={styles.languageBox}>
         <strong>History Phrase</strong>
-        <p>
-          {appLanguage === 'en'
-            ? lessonQuestion(currentLesson, 'en')
-            : lessonQuestion(currentLesson, 'ko')}
-        </p>
+        <p>{lessonQuestion(currentLesson, 'en') || lessonQuestion(currentLesson, appLanguage)}</p>
       </div>
 
-      <div style={questHintStyle}>
+      <div style={styles.hintBox}>
         {t.quiz.hint}
       </div>
 
-      <div style={quizCardStyle}>
-        <p style={quizLabelStyle}>{t.quiz.question}</p>
-        <h3 style={questionStyle}>{lessonQuestion(currentLesson, appLanguage)}</h3>
+      <div style={styles.quizCard}>
+        <p style={styles.quizLabel}>{t.quiz.question}</p>
+        <h3 style={styles.question}>
+          {lessonQuestion(currentLesson, appLanguage)}
+        </h3>
 
-        <div style={choiceGridStyle}>
+        <div style={styles.choiceGrid}>
           {[1, 2, 3, 4].map((number) => {
             const isSelected = selectedChoice === number
-            const isCorrectChoice = number === currentAnswer
+            const isCorrectChoice = Number(number) === Number(currentLesson.answer)
 
-            let style = choiceButtonStyle
+            let buttonStyle = styles.choiceButton
 
             if (isSelected) {
-              style = {
-                ...style,
+              buttonStyle = {
+                ...buttonStyle,
                 border: '1px solid #d6b35a',
                 background: '#1e293b'
               }
             }
 
             if (answeredCorrectly && isCorrectChoice) {
-              style = {
-                ...style,
+              buttonStyle = {
+                ...buttonStyle,
                 border: '1px solid #22c55e',
                 background: '#064e3b'
               }
@@ -756,7 +752,7 @@ function QuizView({
                 key={number}
                 onClick={() => handleAnswer(number)}
                 disabled={answeredCorrectly}
-                style={style}
+                style={buttonStyle}
               >
                 <b>{number}</b>
                 <span>{lessonChoice(currentLesson, number, appLanguage)}</span>
@@ -768,7 +764,7 @@ function QuizView({
         {resultMessage && (
           <div
             style={{
-              ...resultBoxStyle,
+              ...styles.resultBox,
               borderColor: answeredCorrectly ? '#22c55e' : '#ef4444'
             }}
           >
@@ -783,19 +779,23 @@ function QuizView({
             )}
 
             {answeredCorrectly && lessonExplanation(currentLesson, appLanguage) && (
-              <p style={explanationStyle}>
+              <p style={styles.explanation}>
                 {lessonExplanation(currentLesson, appLanguage)}
               </p>
             )}
 
             {lastRewardCard && (
-              <RewardCard t={t} appLanguage={appLanguage} card={lastRewardCard} />
+              <RewardCard
+                t={t}
+                appLanguage={appLanguage}
+                card={lastRewardCard}
+              />
             )}
           </div>
         )}
 
         {answeredCorrectly && (
-          <button onClick={goNextQuiz} style={goldButtonStyle}>
+          <button onClick={goNextQuiz} style={styles.goldButton}>
             {t.quiz.next}
           </button>
         )}
@@ -804,7 +804,7 @@ function QuizView({
   )
 }
 
-function RoadmapView({
+function RoadmapTab({
   t,
   appLanguage,
   roadmapNodes,
@@ -836,52 +836,48 @@ function RoadmapView({
   const mapHeight = maxY * 92 + 110
   const mapWidth = 392
 
-  const groups = [
-    appLanguage === 'en' ? 'State Building' : '국가 정비',
-    appLanguage === 'en' ? 'Golden Age' : '전성기 확장',
-    appLanguage === 'en' ? 'Southern Expansion' : '남진과 전성기',
-    appLanguage === 'en' ? 'Sui-Tang Wars' : '수·당 전쟁',
-    appLanguage === 'en' ? 'Daily Life' : '생활 문화'
-  ]
+  const groups = appLanguage === 'en'
+    ? ['State Building', 'Golden Age', 'Southern Expansion', 'Sui-Tang Wars', 'Daily Life']
+    : ['국가 정비', '전성기 확장', '남진과 전성기', '수·당 전쟁', '생활 문화']
 
   return (
-    <section style={contentSectionStyle}>
-      <div style={sectionHeaderStyle}>
+    <section style={styles.section}>
+      <div style={styles.sectionHeader}>
         <div>
-          <p style={eyebrowGoldStyle}>{t.roadmap.eyebrow}</p>
-          <h2 style={sectionTitleStyle}>{t.roadmap.title}</h2>
+          <p style={styles.goldEyebrow}>{t.roadmap.eyebrow}</p>
+          <h2 style={styles.sectionTitle}>{t.roadmap.title}</h2>
         </div>
 
-        <span style={darkPillStyle}>
+        <span style={styles.pill}>
           {ownedCount}/{totalCount}
         </span>
       </div>
 
-      <div style={roadmapSummaryStyle}>
+      <div style={styles.roadmapSummary}>
         <strong>{t.roadmap.desc}</strong>
 
-        <div style={progressTrackStyle}>
+        <div style={styles.progressTrack}>
           <div
             style={{
-              ...progressFillStyle,
+              ...styles.progressFill,
               width: `${collectionRate}%`
             }}
           />
         </div>
       </div>
 
-      <div style={roadmapLegendStyle}>
+      <div style={styles.legendRow}>
         {groups.map((group) => (
-          <span key={group} style={legendPillStyle}>
+          <span key={group} style={styles.legendPill}>
             {group}
           </span>
         ))}
       </div>
 
-      <div style={roadmapScrollStyle}>
+      <div style={styles.roadmapScroll}>
         <div
           style={{
-            ...roadmapCanvasStyle,
+            ...styles.roadmapCanvas,
             width: mapWidth,
             height: mapHeight
           }}
@@ -890,7 +886,7 @@ function RoadmapView({
             <div
               key={column}
               style={{
-                ...roadmapVerticalLineStyle,
+                ...styles.roadmapVerticalLine,
                 left: `${(column - 1) * 92 + 48}px`
               }}
             />
@@ -900,7 +896,7 @@ function RoadmapView({
             <div
               key={row}
               style={{
-                ...roadmapHorizontalLineStyle,
+                ...styles.roadmapHorizontalLine,
                 top: `${row * 92 - 34}px`
               }}
             />
@@ -916,13 +912,13 @@ function RoadmapView({
                 key={node.node_id}
                 onClick={() => setSelectedNode(node)}
                 style={{
-                  ...roadmapNodeStyle,
+                  ...styles.roadmapNode,
                   ...getRoadmapNodeStyle(node, owned),
                   left,
                   top
                 }}
               >
-                <span style={roadmapNodeYearStyle}>
+                <span style={styles.roadmapYear}>
                   {node.year_start || ''}
                 </span>
                 <strong>
@@ -934,7 +930,7 @@ function RoadmapView({
         </div>
       </div>
 
-      <div style={selectedNodeBoxStyle}>
+      <div style={styles.nodeDetail}>
         {selectedNode ? (
           <RoadmapNodeDetail
             t={t}
@@ -957,12 +953,12 @@ function RoadmapView({
 function RoadmapNodeDetail({ t, appLanguage, node, owned, card }) {
   return (
     <div>
-      <div style={nodeDetailTopStyle}>
-        <span style={owned ? unlockedBadgeStyle : lockedBadgeStyle}>
+      <div style={styles.badgeRow}>
+        <span style={owned ? styles.unlockedBadge : styles.lockedBadge}>
           {owned ? t.roadmap.unlocked : t.roadmap.locked}
         </span>
 
-        <span style={nodeGroupBadgeStyle}>
+        <span style={styles.groupBadge}>
           {nodeGroup(node, appLanguage) || 'Goguryeo'}
         </span>
       </div>
@@ -980,39 +976,7 @@ function RoadmapNodeDetail({ t, appLanguage, node, owned, card }) {
   )
 }
 
-function RewardCard({ t, appLanguage, card }) {
-  const rarityStyle = getRarityStyle(card?.rarity)
-
-  return (
-    <div style={rewardCardStyle}>
-      <div style={rewardTopRowStyle}>
-        <span style={{ ...rarityBadgeStyle, ...rarityStyle.badge }}>
-          {card?.rarity || 'N'}
-        </span>
-
-        <span style={rewardLabelStyle}>{t.quiz.reward}</span>
-      </div>
-
-      <CardImage card={card} size="large" />
-
-      <h3 style={{ margin: '10px 0 4px', fontSize: 22 }}>
-        {cardName(card, appLanguage)}
-      </h3>
-
-      <p style={{ margin: '0 0 8px', color: '#d6b35a', fontSize: 13 }}>
-        {cardEra(card, appLanguage)} · {cardCategory(card, appLanguage)}
-      </p>
-
-      {cardFlavor(card, appLanguage) && (
-        <p style={rewardFlavorStyle}>
-          {cardFlavor(card, appLanguage)}
-        </p>
-      )}
-    </div>
-  )
-}
-
-function CollectionView({
+function CollectionTab({
   t,
   appLanguage,
   ownedCards,
@@ -1022,31 +986,31 @@ function CollectionView({
   collectionRate
 }) {
   return (
-    <section style={contentSectionStyle}>
-      <div style={sectionHeaderStyle}>
+    <section style={styles.section}>
+      <div style={styles.sectionHeader}>
         <div>
-          <p style={eyebrowGoldStyle}>{t.collection.eyebrow}</p>
-          <h2 style={sectionTitleStyle}>{t.collection.title}</h2>
+          <p style={styles.goldEyebrow}>{t.collection.eyebrow}</p>
+          <h2 style={styles.sectionTitle}>{t.collection.title}</h2>
         </div>
 
-        <span style={darkPillStyle}>
+        <span style={styles.pill}>
           {collectionRate}%
         </span>
       </div>
 
-      <div style={collectionSummaryStyle}>
+      <div style={styles.collectionSummary}>
         <strong>{ownedCount} / {totalCount}</strong>
         <span>{t.collection.locked}: {lockedCards.length}</span>
       </div>
 
-      <h3 style={subTitleStyle}>{t.collection.owned}</h3>
+      <h3 style={styles.subTitle}>{t.collection.owned}</h3>
 
       {ownedCards.length === 0 ? (
-        <div style={emptyBoxStyle}>
+        <div style={styles.emptyBox}>
           {t.collection.empty}
         </div>
       ) : (
-        <div style={cardGridStyle}>
+        <div style={styles.cardGrid}>
           {ownedCards.map((item) => (
             <OwnedCard
               key={item.id}
@@ -1057,14 +1021,14 @@ function CollectionView({
         </div>
       )}
 
-      <h3 style={subTitleStyle}>{t.collection.locked}</h3>
+      <h3 style={styles.subTitle}>{t.collection.locked}</h3>
 
       {lockedCards.length === 0 ? (
-        <div style={completeBoxStyle}>
+        <div style={styles.completeBox}>
           {t.collection.complete}
         </div>
       ) : (
-        <div style={cardGridStyle}>
+        <div style={styles.cardGrid}>
           {lockedCards.map((card) => (
             <LockedCard
               key={card.id}
@@ -1086,33 +1050,33 @@ function OwnedCard({ item, appLanguage }) {
   return (
     <div
       style={{
-        ...ownedCardStyle,
+        ...styles.ownedCard,
         border: `1px solid ${rarityStyle.border}`,
         background: rarityStyle.cardBackground
       }}
     >
-      <div style={cardTopRowStyle}>
-        <span style={{ ...rarityBadgeStyle, ...rarityStyle.badge }}>
+      <div style={styles.cardTopRow}>
+        <span style={{ ...styles.rarityBadge, ...rarityStyle.badge }}>
           {card?.rarity || 'N'}
         </span>
 
-        <span style={countBadgeStyle}>
+        <span style={styles.countBadge}>
           x{item.count || 1}
         </span>
       </div>
 
-      <CardImage card={card} size="normal" />
+      <CardImage card={card} size="normal" appLanguage={appLanguage} />
 
-      <h3 style={ownedCardTitleStyle}>
+      <h3 style={styles.cardTitle}>
         {cardName(card, appLanguage)}
       </h3>
 
-      <p style={cardMetaStyle}>
+      <p style={styles.cardMeta}>
         {cardEra(card, appLanguage)} · {cardCategory(card, appLanguage)}
       </p>
 
       {cardFlavor(card, appLanguage) && (
-        <p style={flavorTextStyle}>
+        <p style={styles.flavorText}>
           {cardFlavor(card, appLanguage)}
         </p>
       )}
@@ -1120,969 +1084,38 @@ function OwnedCard({ item, appLanguage }) {
   )
 }
 
-function CardImage({ card, size }) {
-  const isLarge = size === 'large'
-  const height = isLarge ? 158 : 112
-  const fontSize = isLarge ? 52 : 42
-
-  if (card?.image_url) {
-    return (
-      <div
-        style={{
-          ...cardImageWrapStyle,
-          height
-        }}
-      >
-        {card.image_url}
-      </div>
-    )
-  }
+function RewardCard({ t, appLanguage, card }) {
+  const rarityStyle = getRarityStyle(card?.rarity)
 
   return (
-    <div
-      style={{
-        ...cardImagePlaceholderStyle,
-        height,
-        fontSize
-      }}
-    >
-      {getCardIcon(card?.category)}
-    </div>
-  )
-}
+    <div style={styles.rewardCard}>
+      <div style={styles.rewardTopRow}>
+        <span style={{ ...styles.rarityBadge, ...rarityStyle.badge }}>
+          {card?.rarity || 'N'}
+        </span>
 
-function LockedCard({ t, appLanguage, card }) {
-  return (
-    <div style={lockedCardStyle}>
-      <div style={lockedGlowStyle} />
-
-      <div style={lockedIconStyle}>
-        ?
+        <span style={styles.rewardLabel}>{t.quiz.reward}</span>
       </div>
 
-      <h3 style={lockedTitleStyle}>
-        ?????
+      <CardImage card={card} size="large" appLanguage={appLanguage} />
+
+      <h3 style={{ margin: '10px 0 4px', fontSize: 22 }}>
+        {cardName(card, appLanguage)}
       </h3>
 
-      <p style={lockedTextStyle}>
-        {cardCategory(card, appLanguage) || t.collection.undiscovered}
+      <p style={{ margin: '0 0 8px', color: '#d6b35a', fontSize: 13 }}>
+        {cardEra(card, appLanguage)} · {cardCategory(card, appLanguage)}
       </p>
 
-      <small style={lockedHintStyle}>
-        {t.collection.unlockHint}
-      </small>
+      {cardFlavor(card, appLanguage) && (
+        <p style={styles.rewardFlavor}>
+          {cardFlavor(card, appLanguage)}
+        </p>
+      )}
     </div>
   )
 }
 
-function ProfileView({
-  t,
-  appLanguage,
-  changeAppLanguage,
-  user,
-  profile,
-  ownedCount,
-  totalCount,
-  collectionRate,
-  logout
-}) {
-  const nickname =
-    user.user_metadata?.name ||
-    user.user_metadata?.full_name ||
-    user.email
-
-  return (
-    <section style={contentSectionStyle}>
-      <div style={profileCardStyle}>
-        <div style={profileAvatarStyle}>
-          {String(nickname || '?').slice(0, 1).toUpperCase()}
-        </div>
-
-        <h2 style={{ margin: '12px 0 4px' }}>
-          {nickname}
-        </h2>
-
-        <p style={{ margin: 0, color: '#94a3b8' }}>
-          {t.profile.explorer}
-        </p>
-      </div>
-
-      <div style={profileStatGridStyle}>
-        <div style={profileStatStyle}>
-          <strong>{profile?.level ?? 1}</strong>
-          <span>{t.profile.level}</span>
-        </div>
-
-        <div style={profileStatStyle}>
-          <strong>{profile?.exp ?? 0}</strong>
-          <span>{t.profile.exp}</span>
-        </div>
-
-        <div style={profileStatStyle}>
-          <strong>{ownedCount}/{totalCount}</strong>
-          <span>{t.profile.quest}</span>
-        </div>
-
-        <div style={profileStatStyle}>
-          <strong>{collectionRate}%</strong>
-          <span>{t.profile.completion}</span>
-        </div>
-      </div>
-
-      <div style={settingsBoxStyle}>
-        <div>
-          <strong>{t.profile.appLanguage}</strong>
-          <button onClick={changeAppLanguage} style={smallGoldButtonStyle}>
-            🌐 {appLanguage === 'ko' ? '한국어 → English' : 'English → 한국어'}
-          </button>
-        </div>
-
-        <div>
-          <strong>{t.profile.studyLanguage}</strong>
-          <p style={{ margin: '6px 0 0', color: '#94a3b8' }}>
-            English
-          </p>
-        </div>
-      </div>
-
-      <button onClick={logout} style={logoutButtonStyle}>
-        {t.profile.logout}
-      </button>
-    </section>
-  )
-}
-
-function getCardIcon(category) {
-  if (category === '인물') return '👑'
-  if (category === '유물') return '🏺'
-  if (category === '전쟁') return '⚔️'
-  if (category === '건축') return '🏯'
-  if (category === '예술') return '🎨'
-  if (category === '복식') return '🥻'
-  if (category === '제도') return '📜'
-  if (category === '사상') return '🪷'
-  return '✨'
-}
-
-function getLockedLabel(node, lang) {
-  const category = nodeCategory(node, lang)
-
-  if (lang === 'en') {
-    if (category === 'Figure') return '??? Figure'
-    if (category === 'War') return '??? Battle'
-    if (category === 'Artifact') return '??? Artifact'
-    if (category === 'Architecture') return '??? Building'
-    if (category === 'Art') return '??? Art'
-    if (category === 'Clothing') return '??? Clothing'
-    if (category === 'Institution') return '??? System'
-    return '????'
-  }
-
-  if (category === '인물') return '??? 왕'
-  if (category === '전쟁') return '??? 전투'
-  if (category === '유물') return '??? 유물'
-  if (category === '건축') return '??? 건축'
-  if (category === '예술') return '??? 예술'
-  if (category === '복식') return '??? 복식'
-  if (category === '제도') return '??? 제도'
-  return '????'
-}
-
-function getRoadmapNodeStyle(node, owned) {
-  if (!owned) {
-    return {
-      background: '#334155',
-      borderColor: '#64748b',
-      color: '#cbd5e1'
-    }
-  }
-
-  if (node.category === '인물') {
-    return {
-      background: '#7e22ce',
-      borderColor: '#c084fc',
-      color: 'white'
-    }
-  }
-
-  if (node.category === '전쟁') {
-    return {
-      background: '#b91c1c',
-      borderColor: '#f87171',
-      color: 'white'
-    }
-  }
-
-  if (node.category === '건축' || node.category === '복식') {
-    return {
-      background: '#c2410c',
-      borderColor: '#fb923c',
-      color: 'white'
-    }
-  }
-
-  if (node.category === '예술' || node.category === '사상') {
-    return {
-      background: '#166534',
-      borderColor: '#4ade80',
-      color: 'white'
-    }
-  }
-
-  if (node.category === '유물' || node.category === '제도') {
-    return {
-      background: '#475569',
-      borderColor: '#cbd5e1',
-      color: 'white'
-    }
-  }
-
-  return {
-    background: '#4338ca',
-    borderColor: '#818cf8',
-    color: 'white'
-  }
-}
-
-function getRarityStyle(rarity) {
-  if (rarity === 'SSR') {
-    return {
-      border: '#d6b35a',
-      cardBackground: 'linear-gradient(180deg, #2a2115, #111827)',
-      badge: {
-        background: 'linear-gradient(135deg, #d6b35a, #facc15)',
-        color: '#2a1600'
-      }
-    }
-  }
-
-  if (rarity === 'SR') {
-    return {
-      border: '#8b5cf6',
-      cardBackground: 'linear-gradient(180deg, #21183d, #111827)',
-      badge: {
-        background: 'linear-gradient(135deg, #7c3aed, #c4b5fd)',
-        color: 'white'
-      }
-    }
-  }
-
-  if (rarity === 'R') {
-    return {
-      border: '#3b82f6',
-      cardBackground: 'linear-gradient(180deg, #10213f, #111827)',
-      badge: {
-        background: 'linear-gradient(135deg, #2563eb, #93c5fd)',
-        color: 'white'
-      }
-    }
-  }
-
-  return {
-    border: '#475569',
-    cardBackground: 'linear-gradient(180deg, #1f2937, #111827)',
-    badge: {
-      background: '#475569',
-      color: '#e5e7eb'
-    }
-  }
-}
-
-const pageStyle = {
-  minHeight: '100vh',
-  background: '#020617',
-  margin: 0,
-  padding: 0,
-  color: '#f8fafc',
-  fontFamily:
-    'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-}
-
-const phoneShellStyle = {
-  width: '100%',
-  maxWidth: '430px',
-  minHeight: '100vh',
-  margin: '0 auto',
-  background: 'linear-gradient(180deg, #020617, #0f172a 42%, #111827)',
-  padding: '18px 16px 96px',
-  boxSizing: 'border-box'
-}
-
-const heroStyle = {
-  borderRadius: '28px',
-  padding: '22px',
-  background:
-    'radial-gradient(circle at 80% 20%, rgba(214,179,90,0.25), transparent 28%), linear-gradient(135deg, #111827, #1e1b4b 58%, #3b1d0b)',
-  color: 'white',
-  border: '1px solid rgba(214,179,90,0.28)',
-  boxShadow: '0 20px 50px rgba(0, 0, 0, 0.45)',
-  marginBottom: '20px'
-}
-
-const heroTopStyle = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'flex-start',
-  gap: '12px'
-}
-
-const heroButtonGroupStyle = {
-  display: 'flex',
-  gap: 6,
-  alignItems: 'center'
-}
-
-const heroEyebrowStyle = {
-  margin: '0 0 4px',
-  color: '#d6b35a',
-  fontSize: '11px',
-  fontWeight: 900,
-  letterSpacing: '0.7px'
-}
-
-const titleStyle = {
-  margin: 0,
-  fontSize: '36px',
-  letterSpacing: '-1px',
-  color: '#f8fafc'
-}
-
-const heroTextStyle = {
-  margin: '12px 0 18px',
-  color: '#cbd5e1',
-  lineHeight: 1.5
-}
-
-const languageButtonStyle = {
-  border: '1px solid rgba(214,179,90,0.35)',
-  borderRadius: '999px',
-  padding: '8px 10px',
-  background: 'rgba(15,23,42,0.65)',
-  color: 'white',
-  fontWeight: 900,
-  fontSize: '12px',
-  cursor: 'pointer'
-}
-
-const levelBadgeStyle = {
-  padding: '8px 11px',
-  borderRadius: '999px',
-  background: 'rgba(214,179,90,0.18)',
-  border: '1px solid rgba(214,179,90,0.3)',
-  fontWeight: 800,
-  fontSize: '13px'
-}
-
-const progressHeaderStyle = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  fontSize: '14px',
-  marginBottom: '8px'
-}
-
-const progressTrackStyle = {
-  height: '12px',
-  borderRadius: '999px',
-  background: 'rgba(255,255,255,0.12)',
-  overflow: 'hidden'
-}
-
-const progressFillStyle = {
-  height: '100%',
-  borderRadius: '999px',
-  background: 'linear-gradient(90deg, #22c55e, #d6b35a)',
-  transition: 'width 0.35s ease'
-}
-
-const miniStatRowStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
-  gap: '8px',
-  marginTop: '16px'
-}
-
-const miniStatStyle = {
-  padding: '11px',
-  borderRadius: '16px',
-  background: 'rgba(255,255,255,0.08)',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '2px',
-  textAlign: 'center'
-}
-
-const contentSectionStyle = {
-  marginTop: '18px'
-}
-
-const sectionHeaderStyle = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: '12px'
-}
-
-const eyebrowGoldStyle = {
-  margin: '0 0 4px',
-  color: '#d6b35a',
-  fontSize: '13px',
-  fontWeight: 900
-}
-
-const sectionTitleStyle = {
-  margin: 0,
-  fontSize: '25px',
-  letterSpacing: '-0.4px',
-  color: '#f8fafc'
-}
-
-const darkPillStyle = {
-  padding: '7px 10px',
-  borderRadius: '999px',
-  background: 'rgba(214,179,90,0.16)',
-  color: '#facc15',
-  fontWeight: 800,
-  fontSize: '13px',
-  border: '1px solid rgba(214,179,90,0.25)'
-}
-
-const languageLessonBoxStyle = {
-  padding: '15px',
-  borderRadius: '20px',
-  background: 'linear-gradient(135deg, rgba(30,41,59,0.95), rgba(15,23,42,0.95))',
-  border: '1px solid rgba(214,179,90,0.2)',
-  color: '#e2e8f0',
-  marginBottom: '12px',
-  lineHeight: 1.45
-}
-
-const questHintStyle = {
-  padding: '14px',
-  borderRadius: '18px',
-  background: 'rgba(59,130,246,0.12)',
-  color: '#bfdbfe',
-  marginBottom: '12px',
-  fontSize: '14px',
-  lineHeight: 1.45
-}
-
-const quizCardStyle = {
-  padding: '18px',
-  borderRadius: '24px',
-  background: '#0f172a',
-  border: '1px solid rgba(148,163,184,0.22)',
-  boxShadow: '0 14px 30px rgba(0,0,0,0.38)'
-}
-
-const quizLabelStyle = {
-  margin: 0,
-  color: '#94a3b8',
-  fontSize: '13px',
-  fontWeight: 800
-}
-
-const questionStyle = {
-  margin: '8px 0 16px',
-  fontSize: '20px',
-  lineHeight: 1.5,
-  color: '#f8fafc'
-}
-
-const choiceGridStyle = {
-  display: 'grid',
-  gap: '10px'
-}
-
-const choiceButtonStyle = {
-  width: '100%',
-  display: 'flex',
-  gap: '10px',
-  alignItems: 'center',
-  padding: '14px',
-  borderRadius: '16px',
-  border: '1px solid rgba(148,163,184,0.28)',
-  background: '#111827',
-  color: '#f8fafc',
-  fontSize: '15px',
-  textAlign: 'left',
-  cursor: 'pointer'
-}
-
-const resultBoxStyle = {
-  marginTop: '16px',
-  padding: '15px',
-  borderRadius: '18px',
-  border: '1px solid',
-  background: '#020617',
-  color: '#e2e8f0'
-}
-
-const explanationStyle = {
-  margin: '10px 0 0',
-  padding: '12px',
-  borderRadius: '14px',
-  background: 'rgba(255,255,255,0.06)',
-  color: '#cbd5e1',
-  lineHeight: 1.45,
-  fontSize: '13px'
-}
-
-const rewardCardStyle = {
-  marginTop: '14px',
-  padding: '16px',
-  borderRadius: '24px',
-  background: 'linear-gradient(135deg, #2a2115, #111827)',
-  border: '1px solid #d6b35a',
-  textAlign: 'center',
-  boxShadow: '0 14px 30px rgba(214,179,90,0.18)'
-}
-
-const rewardTopRowStyle = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: '10px'
-}
-
-const rewardLabelStyle = {
-  color: '#d6b35a',
-  fontSize: '12px',
-  fontWeight: 900
-}
-
-const rewardFlavorStyle = {
-  margin: '10px 0 0',
-  color: '#cbd5e1',
-  fontSize: '13px',
-  lineHeight: 1.45
-}
-
-const goldButtonStyle = {
-  width: '100%',
-  border: 0,
-  borderRadius: '16px',
-  padding: '14px 16px',
-  background: 'linear-gradient(135deg, #d6b35a, #b8892f)',
-  color: '#1c1204',
-  fontWeight: 900,
-  fontSize: '15px',
-  cursor: 'pointer',
-  marginTop: '14px'
-}
-
-const roadmapSummaryStyle = {
-  padding: '15px',
-  borderRadius: '20px',
-  background: '#0f172a',
-  border: '1px solid rgba(214,179,90,0.18)',
-  color: '#e2e8f0',
-  marginBottom: '12px',
-  lineHeight: 1.45
-}
-
-const roadmapLegendStyle = {
-  display: 'flex',
-  gap: '6px',
-  overflowX: 'auto',
-  paddingBottom: '10px',
-  marginBottom: '8px'
-}
-
-const legendPillStyle = {
-  flex: '0 0 auto',
-  padding: '6px 9px',
-  borderRadius: '999px',
-  background: 'rgba(214,179,90,0.14)',
-  color: '#facc15',
-  fontSize: '12px',
-  fontWeight: 900
-}
-
-const roadmapScrollStyle = {
-  overflowX: 'auto',
-  background: '#020617',
-  borderRadius: '24px',
-  padding: '14px',
-  boxShadow: '0 14px 30px rgba(0,0,0,0.4)',
-  border: '1px solid rgba(148,163,184,0.18)'
-}
-
-const roadmapCanvasStyle = {
-  position: 'relative',
-  background: '#020617',
-  borderRadius: '18px',
-  overflow: 'hidden'
-}
-
-const roadmapVerticalLineStyle = {
-  position: 'absolute',
-  top: 20,
-  bottom: 20,
-  width: '3px',
-  background: '#f97316',
-  opacity: 0.9
-}
-
-const roadmapHorizontalLineStyle = {
-  position: 'absolute',
-  left: 34,
-  right: 34,
-  height: '3px',
-  background: '#f97316',
-  opacity: 0.85
-}
-
-const roadmapNodeStyle = {
-  position: 'absolute',
-  width: '80px',
-  minHeight: '54px',
-  borderRadius: '16px',
-  border: '3px solid',
-  padding: '7px 6px',
-  zIndex: 3,
-  fontSize: '11px',
-  fontWeight: 900,
-  lineHeight: 1.25,
-  textAlign: 'center',
-  cursor: 'pointer',
-  boxShadow: '0 8px 18px rgba(0,0,0,0.38)'
-}
-
-const roadmapNodeYearStyle = {
-  display: 'block',
-  fontSize: '9px',
-  opacity: 0.85,
-  marginBottom: '3px'
-}
-
-const selectedNodeBoxStyle = {
-  marginTop: '14px',
-  padding: '16px',
-  borderRadius: '20px',
-  background: '#0f172a',
-  border: '1px solid rgba(148,163,184,0.2)',
-  boxShadow: '0 8px 20px rgba(0,0,0,0.24)'
-}
-
-const nodeDetailTopStyle = {
-  display: 'flex',
-  gap: '7px',
-  flexWrap: 'wrap'
-}
-
-const unlockedBadgeStyle = {
-  padding: '5px 8px',
-  borderRadius: '999px',
-  background: 'rgba(34,197,94,0.16)',
-  color: '#86efac',
-  fontSize: '12px',
-  fontWeight: 900
-}
-
-const lockedBadgeStyle = {
-  padding: '5px 8px',
-  borderRadius: '999px',
-  background: 'rgba(148,163,184,0.16)',
-  color: '#cbd5e1',
-  fontSize: '12px',
-  fontWeight: 900
-}
-
-const nodeGroupBadgeStyle = {
-  padding: '5px 8px',
-  borderRadius: '999px',
-  background: 'rgba(214,179,90,0.16)',
-  color: '#facc15',
-  fontSize: '12px',
-  fontWeight: 900
-}
-
-const collectionSummaryStyle = {
-  padding: '15px',
-  borderRadius: '20px',
-  background: '#0f172a',
-  border: '1px solid rgba(214,179,90,0.18)',
-  color: '#f8fafc',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '4px',
-  marginBottom: '20px'
-}
-
-const subTitleStyle = {
-  margin: '22px 0 10px',
-  fontSize: '18px',
-  color: '#f8fafc'
-}
-
-const cardGridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  gap: '12px'
-}
-
-const ownedCardStyle = {
-  padding: '12px',
-  borderRadius: '22px',
-  boxShadow: '0 12px 24px rgba(0,0,0,0.28)',
-  color: '#f8fafc'
-}
-
-const cardTopRowStyle = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  gap: '6px',
-  marginBottom: '8px'
-}
-
-const rarityBadgeStyle = {
-  padding: '4px 8px',
-  borderRadius: '999px',
-  fontSize: '11px',
-  fontWeight: 900
-}
-
-const countBadgeStyle = {
-  padding: '4px 8px',
-  borderRadius: '999px',
-  background: 'rgba(214,179,90,0.18)',
-  color: '#facc15',
-  fontSize: '11px',
-  fontWeight: 900
-}
-
-const cardImageWrapStyle = {
-  width: '100%',
-  borderRadius: '18px',
-  overflow: 'hidden',
-  background: '#111827',
-  marginBottom: '10px'
-}
-
-const cardImageStyle = {
-  width: '100%',
-  height: '100%',
-  objectFit: 'cover',
-  display: 'block'
-}
-
-const cardImagePlaceholderStyle = {
-  width: '100%',
-  borderRadius: '18px',
-  background: 'linear-gradient(135deg, #1e293b, #111827)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginBottom: '10px'
-}
-
-const ownedCardTitleStyle = {
-  margin: '0 0 5px',
-  fontSize: '16px',
-  lineHeight: 1.3,
-  color: '#f8fafc'
-}
-
-const cardMetaStyle = {
-  margin: 0,
-  color: '#94a3b8',
-  fontSize: '13px'
-}
-
-const flavorTextStyle = {
-  margin: '9px 0 0',
-  color: '#cbd5e1',
-  fontSize: '12px',
-  lineHeight: 1.45
-}
-
-const lockedCardStyle = {
-  minHeight: '188px',
-  borderRadius: '22px',
-  padding: '15px',
-  background: 'linear-gradient(135deg, #111827, #1e293b)',
-  color: 'white',
-  border: '1px solid #334155',
-  position: 'relative',
-  overflow: 'hidden',
-  boxShadow: 'inset 0 0 30px rgba(0,0,0,0.35)'
-}
-
-const lockedGlowStyle = {
-  position: 'absolute',
-  inset: 0,
-  background: 'radial-gradient(circle at center, rgba(214,179,90,0.16), transparent 58%)'
-}
-
-const lockedIconStyle = {
-  position: 'relative',
-  zIndex: 1,
-  width: '54px',
-  height: '54px',
-  borderRadius: '999px',
-  background: 'rgba(255,255,255,0.08)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: '30px',
-  marginBottom: '12px'
-}
-
-const lockedTitleStyle = {
-  position: 'relative',
-  zIndex: 1,
-  margin: '0 0 8px',
-  fontSize: '20px',
-  letterSpacing: '2px'
-}
-
-const lockedTextStyle = {
-  position: 'relative',
-  zIndex: 1,
-  margin: 0,
-  color: '#cbd5e1',
-  fontSize: '13px',
-  lineHeight: 1.45
-}
-
-const lockedHintStyle = {
-  position: 'relative',
-  zIndex: 1,
-  display: 'block',
-  marginTop: '12px',
-  color: '#d6b35a',
-  fontWeight: 800
-}
-
-const bottomNavStyle = {
-  position: 'fixed',
-  left: '50%',
-  bottom: '14px',
-  transform: 'translateX(-50%)',
-  width: 'calc(100% - 28px)',
-  maxWidth: '398px',
-  padding: '8px',
-  borderRadius: '24px',
-  background: 'rgba(2, 6, 23, 0.94)',
-  border: '1px solid rgba(214,179,90,0.18)',
-  display: 'grid',
-  gridTemplateColumns: 'repeat(4, 1fr)',
-  gap: '5px',
-  boxShadow: '0 16px 36px rgba(0,0,0,0.48)',
-  zIndex: 20
-}
-
-const tabButtonStyle = (active) => ({
-  border: 0,
-  borderRadius: '18px',
-  padding: '9px 4px',
-  background: active ? 'linear-gradient(135deg, #d6b35a, #b8892f)' : 'transparent',
-  color: active ? '#1c1204' : '#cbd5e1',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: '2px',
-  fontWeight: 900,
-  cursor: 'pointer',
-  fontSize: '12px'
-})
-
-const profileCardStyle = {
-  padding: '24px',
-  borderRadius: '28px',
-  background: '#0f172a',
-  border: '1px solid rgba(214,179,90,0.18)',
-  textAlign: 'center',
-  boxShadow: '0 14px 30px rgba(0,0,0,0.32)'
-}
-
-const profileAvatarStyle = {
-  width: '72px',
-  height: '72px',
-  margin: '0 auto',
-  borderRadius: '24px',
-  background: 'linear-gradient(135deg, #d6b35a, #7c2d12)',
-  color: '#1c1204',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: '28px',
-  fontWeight: 900
-}
-
-const profileStatGridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)',
-  gap: '12px',
-  marginTop: '16px'
-}
-
-const profileStatStyle = {
-  padding: '16px',
-  borderRadius: '20px',
-  background: '#0f172a',
-  border: '1px solid rgba(148,163,184,0.2)',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '4px',
-  textAlign: 'center'
-}
-
-const settingsBoxStyle = {
-  marginTop: '16px',
-  padding: '16px',
-  borderRadius: '22px',
-  background: '#0f172a',
-  border: '1px solid rgba(214,179,90,0.18)',
-  display: 'grid',
-  gap: '14px'
-}
-
-const smallGoldButtonStyle = {
-  marginTop: '8px',
-  border: 0,
-  borderRadius: '999px',
-  padding: '9px 12px',
-  background: 'linear-gradient(135deg, #d6b35a, #b8892f)',
-  color: '#1c1204',
-  fontWeight: 900,
-  cursor: 'pointer'
-}
-
-const logoutButtonStyle = {
-  width: '100%',
-  marginTop: '16px',
-  padding: '14px',
-  borderRadius: '16px',
-  border: '1px solid rgba(148,163,184,0.3)',
-  background: '#111827',
-  color: '#f8fafc',
-  fontWeight: 900,
-  cursor: 'pointer'
-}
-
-const emptyBoxStyle = {
-  padding: '18px',
-  borderRadius: '18px',
-  background: '#0f172a',
-  border: '1px dashed #475569',
-  color: '#94a3b8'
-}
-
-const completeBoxStyle = {
-  padding: '18px',
-  borderRadius: '18px',
-  background: 'rgba(34,197,94,0.12)',
-  border: '1px solid #22c55e',
-  color: '#86efac',
-  fontWeight: 900
-}
-
-const errorBoxStyle = {
-  padding: '14px',
-  borderRadius: '16px',
-  background: 'rgba(239,68,68,0.12)',
-  border: '1px solid #ef4444',
-  color: '#fecaca',
-  marginBottom: '14px'
-}
+function CardImage({ card, size, appLanguage }) {
+  const isLarge = size === 'large'
+  const height = isLarge ? 
