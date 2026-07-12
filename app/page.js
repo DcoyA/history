@@ -283,7 +283,8 @@ export default function Home() {
   const [selectedNode, setSelectedNode] = useState(null)
 
   const [activeTab, setActiveTab] = useState('quiz')
-  const [currentScreen, setCurrentScreen] = useState('home')
+  const [currentScreen, setCurrentScreen] = useState('world')
+  const [selectedDifficulty, setSelectedDifficulty] = useState(1)
   const [selectedSubject, setSelectedSubject] = useState(null)
   const [selectedEra, setSelectedEra] = useState(null)
   const [selectedRoute, setSelectedRoute] = useState(null)
@@ -457,10 +458,18 @@ export default function Home() {
     location.reload()
   }
 
+  const getActiveLessons = () => {
+    const filteredLessons = lessons.filter((lesson) => {
+      return Number(lesson.difficulty || 1) === Number(selectedDifficulty || 1)
+    })
+
+    return filteredLessons.length > 0 ? filteredLessons : lessons
+  }
+
   const handleAnswer = async (choiceNumber) => {
     if (!user) return
 
-    const currentLesson = lessons[currentLessonIndex]
+    const currentLesson = getActiveLessons()[currentLessonIndex]
 
     if (!currentLesson) return
 
@@ -559,7 +568,9 @@ export default function Home() {
     setRewardMessage('')
     setLastRewardCard(null)
 
-    if (currentLessonIndex < lessons.length - 1) {
+    const activeLessons = getActiveLessons()
+
+    if (currentLessonIndex < activeLessons.length - 1) {
       setCurrentLessonIndex(currentLessonIndex + 1)
     } else {
       setCurrentLessonIndex(0)
@@ -577,7 +588,8 @@ export default function Home() {
     )
   }
 
-  const currentLesson = lessons[currentLessonIndex]
+  const activeLessons = getActiveLessons()
+  const currentLesson = activeLessons[currentLessonIndex]
   const ownedCardIds = ownedCards.map((item) => item.card_id)
   const ownedCount = ownedCards.length
   const totalCount = allCards.length
@@ -658,8 +670,8 @@ export default function Home() {
           </div>
         )}
 
-        {user && currentScreen === 'home' && (
-          <HomeSelect
+        {user && currentScreen === 'world' && (
+          <WorldMapScreen
             appLanguage={appLanguage}
             ownedCount={ownedCount}
             totalCount={totalCount}
@@ -670,22 +682,41 @@ export default function Home() {
           />
         )}
 
-        {user && currentScreen === 'eras' && (
-          <EraSelect
+        {user && currentScreen === 'timeline' && (
+          <TimelineScreen
             selectedSubject={selectedSubject}
             setSelectedEra={setSelectedEra}
             setCurrentScreen={setCurrentScreen}
           />
         )}
 
-        {user && currentScreen === 'routes' && (
-          <RouteSelect
+        {user && currentScreen === 'civilization' && (
+          <CivilizationScreen
             selectedSubject={selectedSubject}
             selectedEra={selectedEra}
             setSelectedRoute={setSelectedRoute}
             setCurrentScreen={setCurrentScreen}
-            setActiveTab={setActiveTab}
           />
+        )}
+
+        {user && currentScreen === 'difficulty' && (
+          <DifficultyScreen
+            selectedRoute={selectedRoute}
+            selectedDifficulty={selectedDifficulty}
+            setSelectedDifficulty={setSelectedDifficulty}
+            setCurrentLessonIndex={setCurrentLessonIndex}
+            setActiveTab={setActiveTab}
+            setCurrentScreen={setCurrentScreen}
+          />
+        )}
+
+        {user && currentScreen === 'goguryeo' && (
+          <button
+            onClick={() => setCurrentScreen('world')}
+            style={backButtonStyle}
+          >
+            ← 월드맵으로
+          </button>
         )}
 
         {user && currentScreen === 'goguryeo' && activeTab === 'quiz' && (
@@ -694,7 +725,7 @@ export default function Home() {
             appLanguage={appLanguage}
             currentLesson={currentLesson}
             currentLessonIndex={currentLessonIndex}
-            lessons={lessons}
+            lessons={activeLessons}
             selectedChoice={selectedChoice}
             resultMessage={resultMessage}
             rewardMessage={rewardMessage}
@@ -774,7 +805,7 @@ export default function Home() {
 }
 
 
-function HomeSelect({
+function WorldMapScreen({
   appLanguage,
   ownedCount,
   totalCount,
@@ -784,136 +815,119 @@ function HomeSelect({
   setCurrentScreen
 }) {
   const isEnglish = appLanguage === 'en'
+  const koreaProgress = totalCount > 0 ? Math.round((ownedCount / totalCount) * 100) : 0
 
   return (
     <section style={styles.section}>
       <div style={styles.sectionHeader}>
         <div>
-          <p style={styles.goldEyebrow}>{isEnglish ? 'World Select' : '역사 월드 선택'}</p>
-          <h2 style={styles.sectionTitle}>{isEnglish ? 'Choose a History World' : '역사 세계를 선택하세요'}</h2>
+          <p style={styles.goldEyebrow}>{isEnglish ? 'World Map' : '세계 지도'}</p>
+          <h2 style={styles.sectionTitle}>{isEnglish ? 'Choose a Region' : '지역을 선택하세요'}</h2>
+        </div>
+      </div>
+
+      <div style={mapPanelStyle}>
+        <div style={mapOrbStyle}>
+          <button
+            style={{ ...mapNodeStyle, left: '58%', top: '46%' }}
+            onClick={() => {
+              setSelectedSubject('korea')
+              setSelectedEra(null)
+              setSelectedRoute(null)
+              setCurrentScreen('timeline')
+            }}
+          >
+            🇰🇷
+            <small>{isEnglish ? 'Korea' : '한국사'}</small>
+          </button>
+
+          <button disabled style={{ ...mapNodeStyle, left: '44%', top: '42%', opacity: 0.45 }}>
+            🇨🇳
+            <small>{isEnglish ? 'China' : '중국사'}</small>
+          </button>
+
+          <button disabled style={{ ...mapNodeStyle, left: '72%', top: '39%', opacity: 0.45 }}>
+            🇯🇵
+            <small>{isEnglish ? 'Japan' : '일본사'}</small>
+          </button>
+
+          <button disabled style={{ ...mapNodeStyle, left: '20%', top: '32%', opacity: 0.45 }}>
+            🌍
+            <small>{isEnglish ? 'World' : '세계사'}</small>
+          </button>
         </div>
       </div>
 
       <div style={worldIntroStyle}>
-        <strong>{isEnglish ? 'Hi-Story is a global history language-learning platform.' : 'Hi-Story는 세계사를 언어로 배우는 플랫폼입니다.'}</strong>
+        <strong>{isEnglish ? 'A map-first history platform.' : '지도에서 시작하는 역사 언어학습 플랫폼입니다.'}</strong>
         <p>
           {isEnglish
-            ? 'Only Goguryeo is playable now, but the structure is designed for Korean, Chinese, Japanese, and world history.'
-            : '지금은 고구려만 플레이 가능하지만, 한국사·중국사·일본사·세계사로 확장되는 구조입니다.'}
+            ? 'The demo opens Korea → Three Kingdoms → Goguryeo, while other regions are shown as expandable content packs.'
+            : '시연은 한국사 → 삼국시대 → 고구려로 진입하지만, 중국사·일본사·세계사까지 확장되는 구조를 먼저 보여줍니다.'}
         </p>
-      </div>
-
-      <div style={worldGridStyle}>
-        {WORLD_DATA.map((subject) => {
-          const disabled = subject.comingSoon
-          const progress = subject.id === 'korea' && totalCount > 0
-            ? Math.round((ownedCount / totalCount) * 100)
-            : subject.progress
-
-          return (
-            <button
-              key={subject.id}
-              disabled={disabled}
-              onClick={() => {
-                if (disabled) return
-                setSelectedSubject(subject.id)
-                setSelectedEra(null)
-                setSelectedRoute(null)
-                setCurrentScreen('eras')
-              }}
-              style={{
-                ...worldCardStyle,
-                opacity: disabled ? 0.45 : 1,
-                cursor: disabled ? 'not-allowed' : 'pointer'
-              }}
-            >
-              <div style={worldCardTopStyle}>
-                <strong>{subject.name}</strong>
-                <span style={disabled ? comingSoonBadgeStyle : playableBadgeStyle}>
-                  {disabled ? (isEnglish ? 'Coming Soon' : '준비중') : (isEnglish ? 'Playable' : '플레이 가능')}
-                </span>
-              </div>
-
-              <div style={miniProgressTrackStyle}>
-                <div
-                  style={{
-                    ...miniProgressFillStyle,
-                    width: `${progress}%`
-                  }}
-                />
-              </div>
-
-              <p style={worldCardTextStyle}>
-                {disabled
-                  ? (isEnglish ? 'Future world pack' : '추후 공개 예정')
-                  : `${isEnglish ? 'Progress' : '진행도'} ${progress}% · ${ownedCount}/${totalCount}`}
-              </p>
-            </button>
-          )
-        })}
+        <div style={miniProgressTrackStyle}>
+          <div style={{ ...miniProgressFillStyle, width: `${koreaProgress}%` }} />
+        </div>
+        <p style={worldCardTextStyle}>🇰🇷 한국사 진행도 {koreaProgress}% · {ownedCount}/{totalCount}</p>
       </div>
     </section>
   )
 }
 
-function EraSelect({ selectedSubject, setSelectedEra, setCurrentScreen }) {
+function TimelineScreen({ selectedSubject, setSelectedEra, setCurrentScreen }) {
   const subject = WORLD_DATA.find((item) => item.id === selectedSubject) || WORLD_DATA[0]
+  const timeline = [
+    { id: 'gojoseon', name: '고조선', enabled: false, period: '기원전' },
+    { id: 'three_kingdoms', name: '삼국시대', enabled: true, period: '1C - 7C' },
+    { id: 'goryeo', name: '고려', enabled: false, period: '918 - 1392' },
+    { id: 'joseon', name: '조선', enabled: false, period: '1392 - 1897' },
+    { id: 'modern', name: '근현대', enabled: false, period: '1897 - 현재' }
+  ]
 
   return (
     <section style={styles.section}>
-      <button onClick={() => setCurrentScreen('home')} style={backButtonStyle}>
-        ← 역사 세계로
-      </button>
+      <button onClick={() => setCurrentScreen('world')} style={backButtonStyle}>← 세계 지도로</button>
 
       <div style={styles.sectionHeader}>
         <div>
           <p style={styles.goldEyebrow}>{subject.name}</p>
-          <h2 style={styles.sectionTitle}>시대 선택</h2>
+          <h2 style={styles.sectionTitle}>타임라인 선택</h2>
         </div>
       </div>
 
-      <div style={worldGridStyle}>
-        {subject.eras.map((era) => {
-          const enabled = era.id === 'three_kingdoms'
-
-          return (
-            <button
-              key={era.id}
-              disabled={!enabled}
-              onClick={() => {
-                if (!enabled) return
-                setSelectedEra(era.id)
-                setCurrentScreen('routes')
-              }}
-              style={{
-                ...worldCardStyle,
-                opacity: enabled ? 1 : 0.45,
-                cursor: enabled ? 'pointer' : 'not-allowed'
-              }}
-            >
-              <div style={worldCardTopStyle}>
-                <strong>{era.name}</strong>
-                <span style={enabled ? playableBadgeStyle : comingSoonBadgeStyle}>
-                  {enabled ? '입장' : '준비중'}
-                </span>
-              </div>
-              <p style={worldCardTextStyle}>
-                {enabled ? '고구려 퀘스트가 포함된 현재 플레이 가능 시대입니다.' : '콘텐츠 준비중입니다.'}
-              </p>
-            </button>
-          )
-        })}
+      <div style={timelineWrapStyle}>
+        {timeline.map((era, index) => (
+          <button
+            key={era.id}
+            disabled={!era.enabled}
+            onClick={() => {
+              if (!era.enabled) return
+              setSelectedEra(era.id)
+              setCurrentScreen('civilization')
+            }}
+            style={{
+              ...timelineItemStyle,
+              opacity: era.enabled ? 1 : 0.43,
+              cursor: era.enabled ? 'pointer' : 'not-allowed'
+            }}
+          >
+            <span style={timelineDotStyle}>{index + 1}</span>
+            <div>
+              <strong>{era.name}</strong>
+              <p>{era.period} · {era.enabled ? '입장 가능' : '준비중'}</p>
+            </div>
+          </button>
+        ))}
       </div>
     </section>
   )
 }
 
-function RouteSelect({
+function CivilizationScreen({
   selectedSubject,
   selectedEra,
   setSelectedRoute,
-  setCurrentScreen,
-  setActiveTab
+  setCurrentScreen
 }) {
   const subject = WORLD_DATA.find((item) => item.id === selectedSubject) || WORLD_DATA[0]
   const era = subject.eras?.find((item) => item.id === selectedEra) || subject.eras?.[0]
@@ -921,9 +935,7 @@ function RouteSelect({
 
   return (
     <section style={styles.section}>
-      <button onClick={() => setCurrentScreen('eras')} style={backButtonStyle}>
-        ← 시대 선택으로
-      </button>
+      <button onClick={() => setCurrentScreen('timeline')} style={backButtonStyle}>← 타임라인으로</button>
 
       <div style={styles.sectionHeader}>
         <div>
@@ -932,12 +944,7 @@ function RouteSelect({
         </div>
       </div>
 
-      <div style={worldIntroStyle}>
-        <strong>시연에서는 고구려만 활성화되어 있습니다.</strong>
-        <p>백제·신라·가야는 같은 구조로 확장되는 다음 콘텐츠 팩입니다.</p>
-      </div>
-
-      <div style={worldGridStyle}>
+      <div style={civilGridStyle}>
         {routes.map((route) => (
           <button
             key={route.id}
@@ -945,27 +952,103 @@ function RouteSelect({
             onClick={() => {
               if (!route.enabled) return
               setSelectedRoute(route.id)
-              setActiveTab('quiz')
-              setCurrentScreen('goguryeo')
+              setCurrentScreen('difficulty')
             }}
             style={{
-              ...worldCardStyle,
+              ...civilCardStyle,
               opacity: route.enabled ? 1 : 0.45,
               cursor: route.enabled ? 'pointer' : 'not-allowed'
             }}
           >
-            <div style={worldCardTopStyle}>
-              <strong>{route.name}</strong>
-              <span style={route.enabled ? playableBadgeStyle : comingSoonBadgeStyle}>
-                {route.enabled ? '시작' : '준비중'}
-              </span>
-            </div>
-            <p style={worldCardTextStyle}>
-              {route.enabled ? '퀴즈 · 로드맵 · 카드 도감 플레이 가능' : '같은 시스템으로 확장 예정'}
-            </p>
+            <strong>{route.name}</strong>
+            <span>{route.enabled ? '언어 난이도 선택으로' : '준비중'}</span>
           </button>
         ))}
       </div>
+    </section>
+  )
+}
+
+function DifficultyScreen({
+  selectedRoute,
+  selectedDifficulty,
+  setSelectedDifficulty,
+  setCurrentLessonIndex,
+  setActiveTab,
+  setCurrentScreen
+}) {
+  const levels = [
+    {
+      id: 1,
+      name: 'Beginner',
+      ko: '초급',
+      desc: '짧은 문장과 기본 단어로 역사 개념을 익힙니다.',
+      sample: 'The king won many wars.'
+    },
+    {
+      id: 2,
+      name: 'Intermediate',
+      ko: '중급',
+      desc: '확장된 문장과 역사 핵심 어휘를 학습합니다.',
+      sample: 'The king expanded his territory.'
+    },
+    {
+      id: 3,
+      name: 'Advanced',
+      ko: '고급',
+      desc: '추상어와 학술 표현으로 역사 문장을 다룹니다.',
+      sample: 'The monarch consolidated regional hegemony.'
+    }
+  ]
+
+  return (
+    <section style={styles.section}>
+      <button onClick={() => setCurrentScreen('civilization')} style={backButtonStyle}>← 국가 선택으로</button>
+
+      <div style={styles.sectionHeader}>
+        <div>
+          <p style={styles.goldEyebrow}>🏰 고구려 · Language Level</p>
+          <h2 style={styles.sectionTitle}>언어 난이도 선택</h2>
+        </div>
+      </div>
+
+      <div style={worldIntroStyle}>
+        <strong>역사 난이도가 아니라 언어 난이도입니다.</strong>
+        <p>같은 역사 내용을 초급·중급·고급 영어 표현으로 다르게 학습합니다.</p>
+      </div>
+
+      <div style={worldGridStyle}>
+        {levels.map((level) => (
+          <button
+            key={level.id}
+            onClick={() => setSelectedDifficulty(level.id)}
+            style={{
+              ...difficultyCardStyle,
+              borderColor: selectedDifficulty === level.id ? '#d6b35a' : 'rgba(148,163,184,0.22)'
+            }}
+          >
+            <div style={worldCardTopStyle}>
+              <strong>{level.ko} · {level.name}</strong>
+              <span style={selectedDifficulty === level.id ? playableBadgeStyle : comingSoonBadgeStyle}>
+                {selectedDifficulty === level.id ? '선택됨' : '선택'}
+              </span>
+            </div>
+            <p style={worldCardTextStyle}>{level.desc}</p>
+            <p style={difficultySampleStyle}>{level.sample}</p>
+          </button>
+        ))}
+      </div>
+
+      <button
+        onClick={() => {
+          setCurrentLessonIndex(0)
+          setActiveTab('quiz')
+          setCurrentScreen('goguryeo')
+        }}
+        style={styles.goldButton}
+      >
+        고구려 퀘스트 시작
+      </button>
     </section>
   )
 }
@@ -1717,20 +1800,45 @@ const worldIntroStyle = {
   marginBottom: '14px'
 }
 
+const mapPanelStyle = {
+  padding: '14px',
+  borderRadius: '28px',
+  background: 'linear-gradient(135deg, #020617, #0f172a)',
+  border: '1px solid rgba(214,179,90,0.22)',
+  marginBottom: '14px'
+}
+
+const mapOrbStyle = {
+  position: 'relative',
+  height: '330px',
+  borderRadius: '24px',
+  overflow: 'hidden',
+  background: 'radial-gradient(circle at 50% 48%, #1d4ed8 0%, #0f172a 34%, #020617 68%)',
+  boxShadow: 'inset 0 0 60px rgba(0,0,0,0.58)'
+}
+
+const mapNodeStyle = {
+  position: 'absolute',
+  transform: 'translate(-50%, -50%)',
+  minWidth: '78px',
+  border: '1px solid rgba(214,179,90,0.35)',
+  borderRadius: '18px',
+  padding: '9px 8px',
+  background: 'rgba(15,23,42,0.78)',
+  color: '#f8fafc',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '2px',
+  fontSize: '22px',
+  fontWeight: 900,
+  cursor: 'pointer',
+  boxShadow: '0 12px 24px rgba(0,0,0,0.35)'
+}
+
 const worldGridStyle = {
   display: 'grid',
   gap: '12px'
-}
-
-const worldCardStyle = {
-  width: '100%',
-  border: '1px solid rgba(214,179,90,0.24)',
-  borderRadius: '22px',
-  padding: '16px',
-  background: 'linear-gradient(135deg, #0f172a, #111827)',
-  color: '#f8fafc',
-  textAlign: 'left',
-  boxShadow: '0 12px 24px rgba(0,0,0,0.24)'
 }
 
 const worldCardTopStyle = {
@@ -1791,6 +1899,81 @@ const backButtonStyle = {
   fontWeight: 900,
   cursor: 'pointer',
   marginBottom: '14px'
+}
+
+const timelineWrapStyle = {
+  position: 'relative',
+  display: 'grid',
+  gap: '12px',
+  paddingLeft: '8px'
+}
+
+const timelineItemStyle = {
+  width: '100%',
+  border: '1px solid rgba(214,179,90,0.24)',
+  borderRadius: '22px',
+  padding: '14px',
+  background: 'linear-gradient(135deg, #0f172a, #111827)',
+  color: '#f8fafc',
+  textAlign: 'left',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px'
+}
+
+const timelineDotStyle = {
+  width: '34px',
+  height: '34px',
+  borderRadius: '999px',
+  background: 'linear-gradient(135deg, #d6b35a, #b8892f)',
+  color: '#1c1204',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontWeight: 900,
+  flex: '0 0 auto'
+}
+
+const civilGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  gap: '12px'
+}
+
+const civilCardStyle = {
+  minHeight: '116px',
+  border: '1px solid rgba(214,179,90,0.24)',
+  borderRadius: '22px',
+  padding: '14px',
+  background: 'linear-gradient(135deg, #0f172a, #111827)',
+  color: '#f8fafc',
+  textAlign: 'left',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'space-between',
+  gap: '10px'
+}
+
+const difficultyCardStyle = {
+  width: '100%',
+  border: '1px solid rgba(148,163,184,0.22)',
+  borderRadius: '22px',
+  padding: '16px',
+  background: 'linear-gradient(135deg, #0f172a, #111827)',
+  color: '#f8fafc',
+  textAlign: 'left',
+  boxShadow: '0 12px 24px rgba(0,0,0,0.24)',
+  cursor: 'pointer'
+}
+
+const difficultySampleStyle = {
+  margin: '10px 0 0',
+  padding: '10px',
+  borderRadius: '14px',
+  background: 'rgba(255,255,255,0.06)',
+  color: '#bfdbfe',
+  fontSize: '13px',
+  lineHeight: 1.4
 }
 
 const styles = {
