@@ -283,6 +283,7 @@ export default function Home() {
   const [selectedNode, setSelectedNode] = useState(null)
 
   const [activeTab, setActiveTab] = useState('quiz')
+  const [currentScreen, setCurrentScreen] = useState('home')
   const [selectedSubject, setSelectedSubject] = useState(null)
   const [selectedEra, setSelectedEra] = useState(null)
   const [selectedRoute, setSelectedRoute] = useState(null)
@@ -657,7 +658,37 @@ export default function Home() {
           </div>
         )}
 
-        {user && activeTab === 'quiz' && (
+        {user && currentScreen === 'home' && (
+          <HomeSelect
+            appLanguage={appLanguage}
+            ownedCount={ownedCount}
+            totalCount={totalCount}
+            setSelectedSubject={setSelectedSubject}
+            setSelectedEra={setSelectedEra}
+            setSelectedRoute={setSelectedRoute}
+            setCurrentScreen={setCurrentScreen}
+          />
+        )}
+
+        {user && currentScreen === 'eras' && (
+          <EraSelect
+            selectedSubject={selectedSubject}
+            setSelectedEra={setSelectedEra}
+            setCurrentScreen={setCurrentScreen}
+          />
+        )}
+
+        {user && currentScreen === 'routes' && (
+          <RouteSelect
+            selectedSubject={selectedSubject}
+            selectedEra={selectedEra}
+            setSelectedRoute={setSelectedRoute}
+            setCurrentScreen={setCurrentScreen}
+            setActiveTab={setActiveTab}
+          />
+        )}
+
+        {user && currentScreen === 'goguryeo' && activeTab === 'quiz' && (
           <QuizTab
             t={t}
             appLanguage={appLanguage}
@@ -673,7 +704,7 @@ export default function Home() {
           />
         )}
 
-        {user && activeTab === 'roadmap' && (
+        {user && currentScreen === 'goguryeo' && activeTab === 'roadmap' && (
           <RoadmapTab
             t={t}
             appLanguage={appLanguage}
@@ -688,7 +719,7 @@ export default function Home() {
           />
         )}
 
-        {user && activeTab === 'collection' && (
+        {user && currentScreen === 'goguryeo' && activeTab === 'collection' && (
           <CollectionTab
             t={t}
             appLanguage={appLanguage}
@@ -700,7 +731,7 @@ export default function Home() {
           />
         )}
 
-        {user && activeTab === 'profile' && (
+        {user && currentScreen === 'goguryeo' && activeTab === 'profile' && (
           <ProfileTab
             t={t}
             appLanguage={appLanguage}
@@ -714,7 +745,7 @@ export default function Home() {
           />
         )}
 
-        {user && (
+        {user && currentScreen === 'goguryeo' && (
           <nav style={styles.bottomNav}>
             <button onClick={() => setActiveTab('quiz')} style={tabStyle(activeTab === 'quiz')}>
               <span>⚔️</span>
@@ -739,6 +770,203 @@ export default function Home() {
         )}
       </div>
     </main>
+  )
+}
+
+
+function HomeSelect({
+  appLanguage,
+  ownedCount,
+  totalCount,
+  setSelectedSubject,
+  setSelectedEra,
+  setSelectedRoute,
+  setCurrentScreen
+}) {
+  const isEnglish = appLanguage === 'en'
+
+  return (
+    <section style={styles.section}>
+      <div style={styles.sectionHeader}>
+        <div>
+          <p style={styles.goldEyebrow}>{isEnglish ? 'World Select' : '역사 월드 선택'}</p>
+          <h2 style={styles.sectionTitle}>{isEnglish ? 'Choose a History World' : '역사 세계를 선택하세요'}</h2>
+        </div>
+      </div>
+
+      <div style={worldIntroStyle}>
+        <strong>{isEnglish ? 'Hi-Story is a global history language-learning platform.' : 'Hi-Story는 세계사를 언어로 배우는 플랫폼입니다.'}</strong>
+        <p>
+          {isEnglish
+            ? 'Only Goguryeo is playable now, but the structure is designed for Korean, Chinese, Japanese, and world history.'
+            : '지금은 고구려만 플레이 가능하지만, 한국사·중국사·일본사·세계사로 확장되는 구조입니다.'}
+        </p>
+      </div>
+
+      <div style={worldGridStyle}>
+        {WORLD_DATA.map((subject) => {
+          const disabled = subject.comingSoon
+          const progress = subject.id === 'korea' && totalCount > 0
+            ? Math.round((ownedCount / totalCount) * 100)
+            : subject.progress
+
+          return (
+            <button
+              key={subject.id}
+              disabled={disabled}
+              onClick={() => {
+                if (disabled) return
+                setSelectedSubject(subject.id)
+                setSelectedEra(null)
+                setSelectedRoute(null)
+                setCurrentScreen('eras')
+              }}
+              style={{
+                ...worldCardStyle,
+                opacity: disabled ? 0.45 : 1,
+                cursor: disabled ? 'not-allowed' : 'pointer'
+              }}
+            >
+              <div style={worldCardTopStyle}>
+                <strong>{subject.name}</strong>
+                <span style={disabled ? comingSoonBadgeStyle : playableBadgeStyle}>
+                  {disabled ? (isEnglish ? 'Coming Soon' : '준비중') : (isEnglish ? 'Playable' : '플레이 가능')}
+                </span>
+              </div>
+
+              <div style={miniProgressTrackStyle}>
+                <div
+                  style={{
+                    ...miniProgressFillStyle,
+                    width: `${progress}%`
+                  }}
+                />
+              </div>
+
+              <p style={worldCardTextStyle}>
+                {disabled
+                  ? (isEnglish ? 'Future world pack' : '추후 공개 예정')
+                  : `${isEnglish ? 'Progress' : '진행도'} ${progress}% · ${ownedCount}/${totalCount}`}
+              </p>
+            </button>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function EraSelect({ selectedSubject, setSelectedEra, setCurrentScreen }) {
+  const subject = WORLD_DATA.find((item) => item.id === selectedSubject) || WORLD_DATA[0]
+
+  return (
+    <section style={styles.section}>
+      <button onClick={() => setCurrentScreen('home')} style={backButtonStyle}>
+        ← 역사 세계로
+      </button>
+
+      <div style={styles.sectionHeader}>
+        <div>
+          <p style={styles.goldEyebrow}>{subject.name}</p>
+          <h2 style={styles.sectionTitle}>시대 선택</h2>
+        </div>
+      </div>
+
+      <div style={worldGridStyle}>
+        {subject.eras.map((era) => {
+          const enabled = era.id === 'three_kingdoms'
+
+          return (
+            <button
+              key={era.id}
+              disabled={!enabled}
+              onClick={() => {
+                if (!enabled) return
+                setSelectedEra(era.id)
+                setCurrentScreen('routes')
+              }}
+              style={{
+                ...worldCardStyle,
+                opacity: enabled ? 1 : 0.45,
+                cursor: enabled ? 'pointer' : 'not-allowed'
+              }}
+            >
+              <div style={worldCardTopStyle}>
+                <strong>{era.name}</strong>
+                <span style={enabled ? playableBadgeStyle : comingSoonBadgeStyle}>
+                  {enabled ? '입장' : '준비중'}
+                </span>
+              </div>
+              <p style={worldCardTextStyle}>
+                {enabled ? '고구려 퀘스트가 포함된 현재 플레이 가능 시대입니다.' : '콘텐츠 준비중입니다.'}
+              </p>
+            </button>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function RouteSelect({
+  selectedSubject,
+  selectedEra,
+  setSelectedRoute,
+  setCurrentScreen,
+  setActiveTab
+}) {
+  const subject = WORLD_DATA.find((item) => item.id === selectedSubject) || WORLD_DATA[0]
+  const era = subject.eras?.find((item) => item.id === selectedEra) || subject.eras?.[0]
+  const routes = era?.routes || []
+
+  return (
+    <section style={styles.section}>
+      <button onClick={() => setCurrentScreen('eras')} style={backButtonStyle}>
+        ← 시대 선택으로
+      </button>
+
+      <div style={styles.sectionHeader}>
+        <div>
+          <p style={styles.goldEyebrow}>{subject.name} · {era?.name}</p>
+          <h2 style={styles.sectionTitle}>문명/국가 선택</h2>
+        </div>
+      </div>
+
+      <div style={worldIntroStyle}>
+        <strong>시연에서는 고구려만 활성화되어 있습니다.</strong>
+        <p>백제·신라·가야는 같은 구조로 확장되는 다음 콘텐츠 팩입니다.</p>
+      </div>
+
+      <div style={worldGridStyle}>
+        {routes.map((route) => (
+          <button
+            key={route.id}
+            disabled={!route.enabled}
+            onClick={() => {
+              if (!route.enabled) return
+              setSelectedRoute(route.id)
+              setActiveTab('quiz')
+              setCurrentScreen('goguryeo')
+            }}
+            style={{
+              ...worldCardStyle,
+              opacity: route.enabled ? 1 : 0.45,
+              cursor: route.enabled ? 'pointer' : 'not-allowed'
+            }}
+          >
+            <div style={worldCardTopStyle}>
+              <strong>{route.name}</strong>
+              <span style={route.enabled ? playableBadgeStyle : comingSoonBadgeStyle}>
+                {route.enabled ? '시작' : '준비중'}
+              </span>
+            </div>
+            <p style={worldCardTextStyle}>
+              {route.enabled ? '퀴즈 · 로드맵 · 카드 도감 플레이 가능' : '같은 시스템으로 확장 예정'}
+            </p>
+          </button>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -1477,6 +1705,93 @@ const tabStyle = (active) => ({
   cursor: 'pointer',
   fontSize: '12px'
 })
+
+
+const worldIntroStyle = {
+  padding: '16px',
+  borderRadius: '20px',
+  background: 'rgba(214,179,90,0.10)',
+  border: '1px solid rgba(214,179,90,0.22)',
+  color: '#e2e8f0',
+  lineHeight: 1.5,
+  marginBottom: '14px'
+}
+
+const worldGridStyle = {
+  display: 'grid',
+  gap: '12px'
+}
+
+const worldCardStyle = {
+  width: '100%',
+  border: '1px solid rgba(214,179,90,0.24)',
+  borderRadius: '22px',
+  padding: '16px',
+  background: 'linear-gradient(135deg, #0f172a, #111827)',
+  color: '#f8fafc',
+  textAlign: 'left',
+  boxShadow: '0 12px 24px rgba(0,0,0,0.24)'
+}
+
+const worldCardTopStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: '10px',
+  marginBottom: '10px',
+  fontSize: '18px'
+}
+
+const worldCardTextStyle = {
+  margin: '10px 0 0',
+  color: '#94a3b8',
+  fontSize: '13px',
+  lineHeight: 1.4
+}
+
+const playableBadgeStyle = {
+  padding: '5px 8px',
+  borderRadius: '999px',
+  background: 'rgba(34,197,94,0.16)',
+  color: '#86efac',
+  fontSize: '11px',
+  fontWeight: 900,
+  whiteSpace: 'nowrap'
+}
+
+const comingSoonBadgeStyle = {
+  padding: '5px 8px',
+  borderRadius: '999px',
+  background: 'rgba(148,163,184,0.16)',
+  color: '#cbd5e1',
+  fontSize: '11px',
+  fontWeight: 900,
+  whiteSpace: 'nowrap'
+}
+
+const miniProgressTrackStyle = {
+  height: '9px',
+  borderRadius: '999px',
+  background: 'rgba(255,255,255,0.12)',
+  overflow: 'hidden'
+}
+
+const miniProgressFillStyle = {
+  height: '100%',
+  borderRadius: '999px',
+  background: 'linear-gradient(90deg, #22c55e, #d6b35a)'
+}
+
+const backButtonStyle = {
+  border: '1px solid rgba(214,179,90,0.24)',
+  borderRadius: '999px',
+  padding: '8px 12px',
+  background: 'rgba(15,23,42,0.86)',
+  color: '#facc15',
+  fontWeight: 900,
+  cursor: 'pointer',
+  marginBottom: '14px'
+}
 
 const styles = {
   page: {
