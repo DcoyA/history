@@ -282,6 +282,8 @@ export default function Home() {
   const [resultMessage, setResultMessage] = useState('')
   const [rewardMessage, setRewardMessage] = useState('')
   const [lastRewardCard, setLastRewardCard] = useState(null)
+  const [packResult, setPackResult] = useState(null)
+  const [quizCorrectCount, setQuizCorrectCount] = useState(0)
   const [selectedNode, setSelectedNode] = useState(null)
 
   const [activeTab, setActiveTab] = useState('quiz')
@@ -468,6 +470,133 @@ export default function Home() {
     return filteredLessons.length > 0 ? filteredLessons : lessons
   }
 
+  const getPackConfig = () => {
+    if (Number(selectedDifficulty) === 3) {
+      return {
+        name: 'Advanced Goguryeo Pack',
+        count: 5,
+        rates: [
+          { rarity: 'N', weight: 25 },
+          { rarity: 'R', weight: 45 },
+          { rarity: 'SR', weight: 25 },
+          { rarity: 'SSR', weight: 5 }
+        ]
+      }
+    }
+
+    if (Number(selectedDifficulty) === 2) {
+      return {
+        name: 'Intermediate Goguryeo Pack',
+        count: 4,
+        rates: [
+          { rarity: 'N', weight: 45 },
+          { rarity: 'R', weight: 40 },
+          { rarity: 'SR', weight: 13 },
+          { rarity: 'SSR', weight: 2 }
+        ]
+      }
+    }
+
+    return {
+      name: 'Beginner Goguryeo Pack',
+      count: 3,
+      rates: [
+        { rarity: 'N', weight: 70 },
+        { rarity: 'R', weight: 25 },
+        { rarity: 'SR', weight: 4 },
+        { rarity: 'SSR', weight: 1 }
+      ]
+    }
+  }
+
+  const drawRarity = (rates) => {
+    const totalWeight = rates.reduce((sum, item) => sum + item.weight, 0)
+    let roll = Math.random() * totalWeight
+
+    for (const item of rates) {
+      roll -= item.weight
+      if (roll <= 0) return item.rarity
+    }
+
+    return 'N'
+  }
+
+  const pickRandomCard = (rarity) => {
+    const rarityPool = allCards.filter((card) => card.rarity === rarity)
+    const fallbackPool = allCards.length > 0 ? allCards : []
+    const pool = rarityPool.length > 0 ? rarityPool : fallbackPool
+
+    if (pool.length === 0) return null
+
+    return pool[Math.floor(Math.random() * pool.length)]
+  }
+
+  const addCardToUser = async (card) => {
+    if (!user || !card) return
+
+    const { data: existingCard, error: existingError } = await supabase
+      .from('user_cards')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('card_id', card.id)
+      .maybeSingle()
+
+    if (existingError) {
+      console.error(existingError)
+      return
+    }
+
+    if (existingCard) {
+      await supabase
+        .from('user_cards')
+        .update({
+          count: (existingCard.count || 1) + 1
+        })
+        .eq('id', existingCard.id)
+    } else {
+      await supabase
+        .from('user_cards')
+        .insert({
+          id: crypto.randomUUID(),
+          user_id: user.id,
+          card_id: card.id,
+          count: 1
+        })
+    }
+  }
+
+  const openCardPack = async () => {
+    const packConfig = getPackConfig()
+    const pulledCards = []
+
+    for (let index = 0; index < packConfig.count; index += 1) {
+      let rarity = drawRarity(packConfig.rates)
+
+      if (Number(selectedDifficulty) === 3 && index === 0 && rarity === 'N') {
+        rarity = Math.random() < 0.8 ? 'R' : 'SR'
+      }
+
+      const card = pickRandomCard(rarity)
+
+      if (card) {
+        await addCardToUser(card)
+        pulledCards.push(card)
+      }
+    }
+
+    setPackResult({
+      name: packConfig.name,
+      cards: pulledCards,
+      difficulty: selectedDifficulty
+    })
+
+    if (user) {
+      await loadOwnedCards(user.id)
+    }
+
+    await loadAllCards()
+  }
+
   const handleAnswer = async (choiceNumber) => {
     if (!user) return
 
@@ -479,6 +608,8 @@ export default function Home() {
     setResultMessage('')
     setRewardMessage('')
     setLastRewardCard(null)
+    setPackResult(null)
+    setPackResult(null)
 
     const isCorrect = Number(choiceNumber) === Number(currentLesson.answer)
 
@@ -488,80 +619,19 @@ export default function Home() {
       return
     }
 
-    const rewardCardId = currentLesson.reward_card_id
+    const nextCorrectCount = quizCorrectCount + 1
 
-    const { data: rewardCard, error: rewardCardError } = await supabase
-      .from('cards')
-      .select('*')
-      .eq('id', rewardCardId)
-      .single()
+    setResultMessage(t.quiz.correct)
 
-    if (rewardCardError) {
-      console.error(rewardCardError)
-      setResultMessage(t.quiz.correct)
-      setRewardMessage(t.quiz.rewardError)
+    if (nextCorrectCount >= 5) {
+      setQuizCorrectCount(0)
+      setRewardMessage('고구려 카드팩 획득! 팩을 개봉했습니다.')
+      await openCardPack()
       return
     }
 
-    setLastRewardCard(rewardCard)
-
-    const { data: existingCard, error: existingError } = await supabase
-      .from('user_cards')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('card_id', rewardCardId)
-      .maybeSingle()
-
-    if (existingError) {
-      console.error(existingError)
-      setResultMessage(t.quiz.correct)
-      setRewardMessage(t.quiz.saveError)
-      return
-    }
-
-    if (existingCard) {
-      const nextCount = (existingCard.count || 1) + 1
-
-      const { error: updateError } = await supabase
-        .from('user_cards')
-        .update({
-          count: nextCount
-        })
-        .eq('id', existingCard.id)
-
-      if (updateError) {
-        console.error(updateError)
-        setResultMessage(t.quiz.correct)
-        setRewardMessage(t.quiz.saveError)
-        return
-      }
-
-      setResultMessage(t.quiz.correct)
-      setRewardMessage(`${cardName(rewardCard, appLanguage)} ${t.quiz.countUp} x${nextCount}`)
-    } else {
-      const { error: insertError } = await supabase
-        .from('user_cards')
-        .insert({
-          id: crypto.randomUUID(),
-          user_id: user.id,
-          card_id: rewardCardId,
-          count: 1
-        })
-
-      if (insertError) {
-        console.error(insertError)
-        setResultMessage(t.quiz.correct)
-        setRewardMessage(t.quiz.saveError)
-        return
-      }
-
-      setResultMessage(t.quiz.correct)
-      setRewardMessage(`${t.quiz.newCard}: ${cardName(rewardCard, appLanguage)}`)
-    }
-
-    await loadOwnedCards(user.id)
-    await loadAllCards()
-    await loadRoadmapNodes()
+    setQuizCorrectCount(nextCorrectCount)
+    setRewardMessage(`카드팩까지 ${nextCorrectCount}/5 정답`)
   }
 
   const goNextQuiz = () => {
@@ -732,6 +802,8 @@ export default function Home() {
             resultMessage={resultMessage}
             rewardMessage={rewardMessage}
             lastRewardCard={lastRewardCard}
+            packResult={packResult}
+            setPackResult={setPackResult}
             handleAnswer={handleAnswer}
             goNextQuiz={goNextQuiz}
           />
@@ -778,24 +850,45 @@ export default function Home() {
           />
         )}
 
-        {user && currentScreen === 'goguryeo' && (
+        {user && (
           <nav style={styles.bottomNav}>
-            <button onClick={() => setActiveTab('quiz')} style={tabStyle(activeTab === 'quiz')}>
-              <span>⚔️</span>
-              <small>{t.tabs.quiz}</small>
+            <button
+              onClick={() => setCurrentScreen('world')}
+              style={tabStyle(currentScreen === 'world' || currentScreen === 'timeline' || currentScreen === 'civilization' || currentScreen === 'difficulty')}
+            >
+              <span>🌍</span>
+              <small>지도</small>
             </button>
 
-            <button onClick={() => setActiveTab('roadmap')} style={tabStyle(activeTab === 'roadmap')}>
+            <button
+              onClick={() => {
+                setActiveTab('roadmap')
+                setCurrentScreen('goguryeo')
+              }}
+              style={tabStyle(currentScreen === 'goguryeo' && activeTab === 'roadmap')}
+            >
               <span>🗺️</span>
               <small>{t.tabs.roadmap}</small>
             </button>
 
-            <button onClick={() => setActiveTab('collection')} style={tabStyle(activeTab === 'collection')}>
+            <button
+              onClick={() => {
+                setActiveTab('collection')
+                setCurrentScreen('goguryeo')
+              }}
+              style={tabStyle(currentScreen === 'goguryeo' && activeTab === 'collection')}
+            >
               <span>📚</span>
               <small>{t.tabs.collection}</small>
             </button>
 
-            <button onClick={() => setActiveTab('profile')} style={tabStyle(activeTab === 'profile')}>
+            <button
+              onClick={() => {
+                setActiveTab('profile')
+                setCurrentScreen('goguryeo')
+              }}
+              style={tabStyle(currentScreen === 'goguryeo' && activeTab === 'profile')}
+            >
               <span>👤</span>
               <small>{t.tabs.profile}</small>
             </button>
@@ -1204,6 +1297,8 @@ function QuizTab({
   resultMessage,
   rewardMessage,
   lastRewardCard,
+  packResult,
+  setPackResult,
   handleAnswer,
   goNextQuiz
 }) {
@@ -1305,6 +1400,14 @@ function QuizTab({
               <p style={styles.explanation}>
                 {lessonExplanation(currentLesson, appLanguage)}
               </p>
+            )}
+
+            {packResult && (
+              <CardPackResult
+                packResult={packResult}
+                appLanguage={appLanguage}
+                setPackResult={setPackResult}
+              />
             )}
 
             {lastRewardCard && (
@@ -1604,6 +1707,56 @@ function OwnedCard({ item, appLanguage }) {
           {cardFlavor(card, appLanguage)}
         </p>
       )}
+    </div>
+  )
+}
+
+
+function CardPackResult({ packResult, appLanguage, setPackResult }) {
+  if (!packResult) return null
+
+  const difficultyLabel = Number(packResult.difficulty) === 3
+    ? 'Advanced'
+    : Number(packResult.difficulty) === 2
+      ? 'Intermediate'
+      : 'Beginner'
+
+  return (
+    <div style={packResultBoxStyle}>
+      <div style={packHeaderStyle}>
+        <div>
+          <p style={styles.goldEyebrow}>CARD PACK OPENED</p>
+          <h3 style={{ margin: '4px 0 0' }}>{packResult.name}</h3>
+        </div>
+        <span style={playableBadgeStyle}>{difficultyLabel}</span>
+      </div>
+
+      <div style={packCardsGridStyle}>
+        {packResult.cards.map((card, index) => {
+          const rarityStyle = getRarityStyle(card?.rarity)
+
+          return (
+            <div
+              key={`${card.id}-${index}`}
+              style={{
+                ...packMiniCardStyle,
+                borderColor: rarityStyle.border,
+                background: rarityStyle.cardBackground
+              }}
+            >
+              <span style={{ ...styles.rarityBadge, ...rarityStyle.badge }}>
+                {card?.rarity || 'N'}
+              </span>
+              <CardImage card={card} size="normal" appLanguage={appLanguage} />
+              <strong>{cardName(card, appLanguage)}</strong>
+            </div>
+          )
+        })}
+      </div>
+
+      <button onClick={() => setPackResult(null)} style={styles.goldButton}>
+        확인
+      </button>
     </div>
   )
 }
@@ -2181,6 +2334,40 @@ const flagBubbleStyle = {
   justifyContent: 'center',
   fontSize: '22px',
   marginBottom: '2px'
+}
+
+
+const packResultBoxStyle = {
+  marginTop: '14px',
+  padding: '16px',
+  borderRadius: '24px',
+  background: 'linear-gradient(135deg, #2a2115, #111827)',
+  border: '1px solid rgba(214,179,90,0.5)',
+  boxShadow: '0 16px 36px rgba(214,179,90,0.18)'
+}
+
+const packHeaderStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  gap: '12px',
+  alignItems: 'flex-start',
+  marginBottom: '14px'
+}
+
+const packCardsGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  gap: '10px'
+}
+
+const packMiniCardStyle = {
+  padding: '10px',
+  borderRadius: '18px',
+  border: '1px solid',
+  color: '#f8fafc',
+  display: 'grid',
+  gap: '7px',
+  fontSize: '13px'
 }
 
 const styles = {
