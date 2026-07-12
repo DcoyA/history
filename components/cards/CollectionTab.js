@@ -255,4 +255,23 @@ const styles = {
     margin: '0 0 8px',
     fontSize: '20px',
     letterSpacing: '2px'
+  },
+
+  lockedText: {
+    position: 'relative',
+    zIndex: 1,
+    margin: 0,
+    color: '#cbd5e1',
+    fontSize: '13px',
+    lineHeight: 1.45
+  },
+
+  lockedHint: {
+    position: 'relative',
+    zIndex: 1,
+    display: 'block',
+    marginTop: '12px',
+    color: '#d6b35a',
+    fontWeight: 800
   }
+}
