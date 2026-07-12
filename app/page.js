@@ -54,7 +54,6 @@ const UI = {
       unlockHint: '퀴즈를 풀어 해금'
     },
     profile: {
-      title: '내정보',
       explorer: '고구려 로드맵 탐험가',
       level: '레벨',
       exp: '경험치',
@@ -123,7 +122,6 @@ const UI = {
       unlockHint: 'Unlock through quizzes'
     },
     profile: {
-      title: 'Profile',
       explorer: 'Goguryeo Roadmap Explorer',
       level: 'Level',
       exp: 'EXP',
@@ -223,6 +221,7 @@ export default function Home() {
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem('hiStoryAppLanguage')
+
     if (savedLanguage === 'ko' || savedLanguage === 'en') {
       setAppLanguage(savedLanguage)
     }
@@ -262,7 +261,7 @@ export default function Home() {
       currentUser.user_metadata?.full_name ||
       currentUser.email
 
-    const { data: savedProfile } = await supabase
+    const { data: savedProfile, error: profileError } = await supabase
       .from('profiles')
       .upsert({
         id: currentUser.id,
@@ -273,7 +272,7 @@ export default function Home() {
       .select()
       .single()
 
-    if (savedProfile) {
+    if (!profileError && savedProfile) {
       setProfile(savedProfile)
     }
 
@@ -391,6 +390,7 @@ export default function Home() {
     if (!user) return
 
     const currentLesson = lessons[currentLessonIndex]
+
     if (!currentLesson) return
 
     setSelectedChoice(choiceNumber)
@@ -720,6 +720,7 @@ function QuizTab({
 
       <div style={styles.quizCard}>
         <p style={styles.quizLabel}>{t.quiz.question}</p>
+
         <h3 style={styles.question}>
           {lessonQuestion(currentLesson, appLanguage)}
         </h3>
@@ -921,6 +922,7 @@ function RoadmapTab({
                 <span style={styles.roadmapYear}>
                   {node.year_start || ''}
                 </span>
+
                 <strong>
                   {owned ? nodeLabel(node, appLanguage) : getLockedLabel(node, appLanguage)}
                 </strong>
@@ -1118,4 +1120,970 @@ function RewardCard({ t, appLanguage, card }) {
 
 function CardImage({ card, size, appLanguage }) {
   const isLarge = size === 'large'
-  const height = isLarge ? 
+  const height = isLarge ? 158 : 112
+  const fontSize = isLarge ? 52 : 42
+  const altText = cardName(card, appLanguage) || 'card image'
+
+  if (card?.image_url) {
+    return (
+      <div
+        style={{
+          ...styles.cardImageWrap,
+          height
+        }}
+      >
+        {card.image_url}
+      </div>
+    )
+  }
+
+  return (
+    <div
+      style={{
+        ...styles.cardImagePlaceholder,
+        height,
+        fontSize
+      }}
+    >
+      {getCardIcon(card?.category)}
+    </div>
+  )
+}
+
+function LockedCard({ t, appLanguage, card }) {
+  return (
+    <div style={styles.lockedCard}>
+      <div style={styles.lockedGlow} />
+
+      <div style={styles.lockedIcon}>
+        ?
+      </div>
+
+      <h3 style={styles.lockedTitle}>
+        ?????
+      </h3>
+
+      <p style={styles.lockedText}>
+        {cardCategory(card, appLanguage) || t.collection.undiscovered}
+      </p>
+
+      <small style={styles.lockedHint}>
+        {t.collection.unlockHint}
+      </small>
+    </div>
+  )
+}
+
+function ProfileTab({
+  t,
+  appLanguage,
+  changeAppLanguage,
+  user,
+  profile,
+  ownedCount,
+  totalCount,
+  collectionRate,
+  logout
+}) {
+  const nickname =
+    user.user_metadata?.name ||
+    user.user_metadata?.full_name ||
+    user.email
+
+  return (
+    <section style={styles.section}>
+      <div style={styles.profileCard}>
+        <div style={styles.profileAvatar}>
+          {String(nickname || '?').slice(0, 1).toUpperCase()}
+        </div>
+
+        <h2 style={{ margin: '12px 0 4px' }}>
+          {nickname}
+        </h2>
+
+        <p style={{ margin: 0, color: '#94a3b8' }}>
+          {t.profile.explorer}
+        </p>
+      </div>
+
+      <div style={styles.profileStatGrid}>
+        <div style={styles.profileStat}>
+          <strong>{profile?.level ?? 1}</strong>
+          <span>{t.profile.level}</span>
+        </div>
+
+        <div style={styles.profileStat}>
+          <strong>{profile?.exp ?? 0}</strong>
+          <span>{t.profile.exp}</span>
+        </div>
+
+        <div style={styles.profileStat}>
+          <strong>{ownedCount}/{totalCount}</strong>
+          <span>{t.profile.quest}</span>
+        </div>
+
+        <div style={styles.profileStat}>
+          <strong>{collectionRate}%</strong>
+          <span>{t.profile.completion}</span>
+        </div>
+      </div>
+
+      <div style={styles.settingsBox}>
+        <div>
+          <strong>{t.profile.appLanguage}</strong>
+          <button onClick={changeAppLanguage} style={styles.smallGoldButton}>
+            🌐 {appLanguage === 'ko' ? '한국어 → English' : 'English → 한국어'}
+          </button>
+        </div>
+
+        <div>
+          <strong>{t.profile.studyLanguage}</strong>
+          <p style={{ margin: '6px 0 0', color: '#94a3b8' }}>
+            English
+          </p>
+        </div>
+      </div>
+
+      <button onClick={logout} style={styles.logoutButton}>
+        {t.profile.logout}
+      </button>
+    </section>
+  )
+}
+
+function getCardIcon(category) {
+  if (category === '인물') return '👑'
+  if (category === '유물') return '🏺'
+  if (category === '전쟁') return '⚔️'
+  if (category === '건축') return '🏯'
+  if (category === '예술') return '🎨'
+  if (category === '복식') return '🥻'
+  if (category === '제도') return '📜'
+  if (category === '사상') return '🪷'
+  return '✨'
+}
+
+function getLockedLabel(node, lang) {
+  const category = nodeCategory(node, lang)
+
+  if (lang === 'en') {
+    if (category === 'Figure') return '??? Figure'
+    if (category === 'War') return '??? Battle'
+    if (category === 'Artifact') return '??? Artifact'
+    if (category === 'Architecture') return '??? Building'
+    if (category === 'Art') return '??? Art'
+    if (category === 'Clothing') return '??? Clothing'
+    if (category === 'Institution') return '??? System'
+    return '????'
+  }
+
+  if (category === '인물') return '??? 왕'
+  if (category === '전쟁') return '??? 전투'
+  if (category === '유물') return '??? 유물'
+  if (category === '건축') return '??? 건축'
+  if (category === '예술') return '??? 예술'
+  if (category === '복식') return '??? 복식'
+  if (category === '제도') return '??? 제도'
+  return '????'
+}
+
+function getRoadmapNodeStyle(node, owned) {
+  if (!owned) {
+    return {
+      background: '#334155',
+      borderColor: '#64748b',
+      color: '#cbd5e1'
+    }
+  }
+
+  if (node.category === '인물') {
+    return {
+      background: '#7e22ce',
+      borderColor: '#c084fc',
+      color: 'white'
+    }
+  }
+
+  if (node.category === '전쟁') {
+    return {
+      background: '#b91c1c',
+      borderColor: '#f87171',
+      color: 'white'
+    }
+  }
+
+  if (node.category === '건축' || node.category === '복식') {
+    return {
+      background: '#c2410c',
+      borderColor: '#fb923c',
+      color: 'white'
+    }
+  }
+
+  if (node.category === '예술' || node.category === '사상') {
+    return {
+      background: '#166534',
+      borderColor: '#4ade80',
+      color: 'white'
+    }
+  }
+
+  if (node.category === '유물' || node.category === '제도') {
+    return {
+      background: '#475569',
+      borderColor: '#cbd5e1',
+      color: 'white'
+    }
+  }
+
+  return {
+    background: '#4338ca',
+    borderColor: '#818cf8',
+    color: 'white'
+  }
+}
+
+function getRarityStyle(rarity) {
+  if (rarity === 'SSR') {
+    return {
+      border: '#d6b35a',
+      cardBackground: 'linear-gradient(180deg, #2a2115, #111827)',
+      badge: {
+        background: 'linear-gradient(135deg, #d6b35a, #facc15)',
+        color: '#2a1600'
+      }
+    }
+  }
+
+  if (rarity === 'SR') {
+    return {
+      border: '#8b5cf6',
+      cardBackground: 'linear-gradient(180deg, #21183d, #111827)',
+      badge: {
+        background: 'linear-gradient(135deg, #7c3aed, #c4b5fd)',
+        color: 'white'
+      }
+    }
+  }
+
+  if (rarity === 'R') {
+    return {
+      border: '#3b82f6',
+      cardBackground: 'linear-gradient(180deg, #10213f, #111827)',
+      badge: {
+        background: 'linear-gradient(135deg, #2563eb, #93c5fd)',
+        color: 'white'
+      }
+    }
+  }
+
+  return {
+    border: '#475569',
+    cardBackground: 'linear-gradient(180deg, #1f2937, #111827)',
+    badge: {
+      background: '#475569',
+      color: '#e5e7eb'
+    }
+  }
+}
+
+const tabStyle = (active) => ({
+  border: 0,
+  borderRadius: '18px',
+  padding: '9px 4px',
+  background: active ? 'linear-gradient(135deg, #d6b35a, #b8892f)' : 'transparent',
+  color: active ? '#1c1204' : '#cbd5e1',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '2px',
+  fontWeight: 900,
+  cursor: 'pointer',
+  fontSize: '12px'
+})
+
+const styles = {
+  page: {
+    minHeight: '100vh',
+    background: '#020617',
+    margin: 0,
+    padding: 0,
+    color: '#f8fafc',
+    fontFamily:
+      'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+  },
+
+  shell: {
+    width: '100%',
+    maxWidth: '430px',
+    minHeight: '100vh',
+    margin: '0 auto',
+    background: 'linear-gradient(180deg, #020617, #0f172a 42%, #111827)',
+    padding: '18px 16px 96px',
+    boxSizing: 'border-box'
+  },
+
+  hero: {
+    borderRadius: '28px',
+    padding: '22px',
+    background:
+      'radial-gradient(circle at 80% 20%, rgba(214,179,90,0.25), transparent 28%), linear-gradient(135deg, #111827, #1e1b4b 58%, #3b1d0b)',
+    color: 'white',
+    border: '1px solid rgba(214,179,90,0.28)',
+    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.45)',
+    marginBottom: '20px'
+  },
+
+  heroTop: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '12px'
+  },
+
+  heroButtons: {
+    display: 'flex',
+    gap: 6,
+    alignItems: 'center'
+  },
+
+  heroEyebrow: {
+    margin: '0 0 4px',
+    color: '#d6b35a',
+    fontSize: '11px',
+    fontWeight: 900,
+    letterSpacing: '0.7px'
+  },
+
+  title: {
+    margin: 0,
+    fontSize: '36px',
+    letterSpacing: '-1px',
+    color: '#f8fafc'
+  },
+
+  heroText: {
+    margin: '12px 0 18px',
+    color: '#cbd5e1',
+    lineHeight: 1.5
+  },
+
+  langButton: {
+    border: '1px solid rgba(214,179,90,0.35)',
+    borderRadius: '999px',
+    padding: '8px 10px',
+    background: 'rgba(15,23,42,0.65)',
+    color: 'white',
+    fontWeight: 900,
+    fontSize: '12px',
+    cursor: 'pointer'
+  },
+
+  levelBadge: {
+    padding: '8px 11px',
+    borderRadius: '999px',
+    background: 'rgba(214,179,90,0.18)',
+    border: '1px solid rgba(214,179,90,0.3)',
+    fontWeight: 800,
+    fontSize: '13px'
+  },
+
+  progressHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '14px',
+    marginBottom: '8px'
+  },
+
+  progressTrack: {
+    height: '12px',
+    borderRadius: '999px',
+    background: 'rgba(255,255,255,0.12)',
+    overflow: 'hidden'
+  },
+
+  progressFill: {
+    height: '100%',
+    borderRadius: '999px',
+    background: 'linear-gradient(90deg, #22c55e, #d6b35a)',
+    transition: 'width 0.35s ease'
+  },
+
+  statRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '8px',
+    marginTop: '16px'
+  },
+
+  statBox: {
+    padding: '11px',
+    borderRadius: '16px',
+    background: 'rgba(255,255,255,0.08)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+    textAlign: 'center'
+  },
+
+  section: {
+    marginTop: '18px'
+  },
+
+  sectionHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '12px'
+  },
+
+  goldEyebrow: {
+    margin: '0 0 4px',
+    color: '#d6b35a',
+    fontSize: '13px',
+    fontWeight: 900
+  },
+
+  sectionTitle: {
+    margin: 0,
+    fontSize: '25px',
+    letterSpacing: '-0.4px',
+    color: '#f8fafc'
+  },
+
+  pill: {
+    padding: '7px 10px',
+    borderRadius: '999px',
+    background: 'rgba(214,179,90,0.16)',
+    color: '#facc15',
+    fontWeight: 800,
+    fontSize: '13px',
+    border: '1px solid rgba(214,179,90,0.25)'
+  },
+
+  languageBox: {
+    padding: '15px',
+    borderRadius: '20px',
+    background: 'linear-gradient(135deg, rgba(30,41,59,0.95), rgba(15,23,42,0.95))',
+    border: '1px solid rgba(214,179,90,0.2)',
+    color: '#e2e8f0',
+    marginBottom: '12px',
+    lineHeight: 1.45
+  },
+
+  hintBox: {
+    padding: '14px',
+    borderRadius: '18px',
+    background: 'rgba(59,130,246,0.12)',
+    color: '#bfdbfe',
+    marginBottom: '12px',
+    fontSize: '14px',
+    lineHeight: 1.45
+  },
+
+  quizCard: {
+    padding: '18px',
+    borderRadius: '24px',
+    background: '#0f172a',
+    border: '1px solid rgba(148,163,184,0.22)',
+    boxShadow: '0 14px 30px rgba(0,0,0,0.38)'
+  },
+
+  quizLabel: {
+    margin: 0,
+    color: '#94a3b8',
+    fontSize: '13px',
+    fontWeight: 800
+  },
+
+  question: {
+    margin: '8px 0 16px',
+    fontSize: '20px',
+    lineHeight: 1.5,
+    color: '#f8fafc'
+  },
+
+  choiceGrid: {
+    display: 'grid',
+    gap: '10px'
+  },
+
+  choiceButton: {
+    width: '100%',
+    display: 'flex',
+    gap: '10px',
+    alignItems: 'center',
+    padding: '14px',
+    borderRadius: '16px',
+    border: '1px solid rgba(148,163,184,0.28)',
+    background: '#111827',
+    color: '#f8fafc',
+    fontSize: '15px',
+    textAlign: 'left',
+    cursor: 'pointer'
+  },
+
+  resultBox: {
+    marginTop: '16px',
+    padding: '15px',
+    borderRadius: '18px',
+    border: '1px solid',
+    background: '#020617',
+    color: '#e2e8f0'
+  },
+
+  explanation: {
+    margin: '10px 0 0',
+    padding: '12px',
+    borderRadius: '14px',
+    background: 'rgba(255,255,255,0.06)',
+    color: '#cbd5e1',
+    lineHeight: 1.45,
+    fontSize: '13px'
+  },
+
+  goldButton: {
+    width: '100%',
+    border: 0,
+    borderRadius: '16px',
+    padding: '14px 16px',
+    background: 'linear-gradient(135deg, #d6b35a, #b8892f)',
+    color: '#1c1204',
+    fontWeight: 900,
+    fontSize: '15px',
+    cursor: 'pointer',
+    marginTop: '14px'
+  },
+
+  roadmapSummary: {
+    padding: '15px',
+    borderRadius: '20px',
+    background: '#0f172a',
+    border: '1px solid rgba(214,179,90,0.18)',
+    color: '#e2e8f0',
+    marginBottom: '12px',
+    lineHeight: 1.45
+  },
+
+  legendRow: {
+    display: 'flex',
+    gap: '6px',
+    overflowX: 'auto',
+    paddingBottom: '10px',
+    marginBottom: '8px'
+  },
+
+  legendPill: {
+    flex: '0 0 auto',
+    padding: '6px 9px',
+    borderRadius: '999px',
+    background: 'rgba(214,179,90,0.14)',
+    color: '#facc15',
+    fontSize: '12px',
+    fontWeight: 900
+  },
+
+  roadmapScroll: {
+    overflowX: 'auto',
+    background: '#020617',
+    borderRadius: '24px',
+    padding: '14px',
+    boxShadow: '0 14px 30px rgba(0,0,0,0.4)',
+    border: '1px solid rgba(148,163,184,0.18)'
+  },
+
+  roadmapCanvas: {
+    position: 'relative',
+    background: '#020617',
+    borderRadius: '18px',
+    overflow: 'hidden'
+  },
+
+  roadmapVerticalLine: {
+    position: 'absolute',
+    top: 20,
+    bottom: 20,
+    width: '3px',
+    background: '#f97316',
+    opacity: 0.9
+  },
+
+  roadmapHorizontalLine: {
+    position: 'absolute',
+    left: 34,
+    right: 34,
+    height: '3px',
+    background: '#f97316',
+    opacity: 0.85
+  },
+
+  roadmapNode: {
+    position: 'absolute',
+    width: '80px',
+    minHeight: '54px',
+    borderRadius: '16px',
+    border: '3px solid',
+    padding: '7px 6px',
+    zIndex: 3,
+    fontSize: '11px',
+    fontWeight: 900,
+    lineHeight: 1.25,
+    textAlign: 'center',
+    cursor: 'pointer',
+    boxShadow: '0 8px 18px rgba(0,0,0,0.38)'
+  },
+
+  roadmapYear: {
+    display: 'block',
+    fontSize: '9px',
+    opacity: 0.85,
+    marginBottom: '3px'
+  },
+
+  nodeDetail: {
+    marginTop: '14px',
+    padding: '16px',
+    borderRadius: '20px',
+    background: '#0f172a',
+    border: '1px solid rgba(148,163,184,0.2)',
+    boxShadow: '0 8px 20px rgba(0,0,0,0.24)'
+  },
+
+  badgeRow: {
+    display: 'flex',
+    gap: '7px',
+    flexWrap: 'wrap'
+  },
+
+  unlockedBadge: {
+    padding: '5px 8px',
+    borderRadius: '999px',
+    background: 'rgba(34,197,94,0.16)',
+    color: '#86efac',
+    fontSize: '12px',
+    fontWeight: 900
+  },
+
+  lockedBadge: {
+    padding: '5px 8px',
+    borderRadius: '999px',
+    background: 'rgba(148,163,184,0.16)',
+    color: '#cbd5e1',
+    fontSize: '12px',
+    fontWeight: 900
+  },
+
+  groupBadge: {
+    padding: '5px 8px',
+    borderRadius: '999px',
+    background: 'rgba(214,179,90,0.16)',
+    color: '#facc15',
+    fontSize: '12px',
+    fontWeight: 900
+  },
+
+  collectionSummary: {
+    padding: '15px',
+    borderRadius: '20px',
+    background: '#0f172a',
+    border: '1px solid rgba(214,179,90,0.18)',
+    color: '#f8fafc',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    marginBottom: '20px'
+  },
+
+  subTitle: {
+    margin: '22px 0 10px',
+    fontSize: '18px',
+    color: '#f8fafc'
+  },
+
+  cardGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: '12px'
+  },
+
+  ownedCard: {
+    padding: '12px',
+    borderRadius: '22px',
+    boxShadow: '0 12px 24px rgba(0,0,0,0.28)',
+    color: '#f8fafc'
+  },
+
+  cardTopRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '6px',
+    marginBottom: '8px'
+  },
+
+  rarityBadge: {
+    padding: '4px 8px',
+    borderRadius: '999px',
+    fontSize: '11px',
+    fontWeight: 900
+  },
+
+  countBadge: {
+    padding: '4px 8px',
+    borderRadius: '999px',
+    background: 'rgba(214,179,90,0.18)',
+    color: '#facc15',
+    fontSize: '11px',
+    fontWeight: 900
+  },
+
+  cardImageWrap: {
+    width: '100%',
+    borderRadius: '18px',
+    overflow: 'hidden',
+    background: '#111827',
+    marginBottom: '10px'
+  },
+
+  cardImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    display: 'block'
+  },
+
+  cardImagePlaceholder: {
+    width: '100%',
+    borderRadius: '18px',
+    background: 'linear-gradient(135deg, #1e293b, #111827)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: '10px'
+  },
+
+  cardTitle: {
+    margin: '0 0 5px',
+    fontSize: '16px',
+    lineHeight: 1.3,
+    color: '#f8fafc'
+  },
+
+  cardMeta: {
+    margin: 0,
+    color: '#94a3b8',
+    fontSize: '13px'
+  },
+
+  flavorText: {
+    margin: '9px 0 0',
+    color: '#cbd5e1',
+    fontSize: '12px',
+    lineHeight: 1.45
+  },
+
+  rewardCard: {
+    marginTop: '14px',
+    padding: '16px',
+    borderRadius: '24px',
+    background: 'linear-gradient(135deg, #2a2115, #111827)',
+    border: '1px solid #d6b35a',
+    textAlign: 'center',
+    boxShadow: '0 14px 30px rgba(214,179,90,0.18)'
+  },
+
+  rewardTopRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '10px'
+  },
+
+  rewardLabel: {
+    color: '#d6b35a',
+    fontSize: '12px',
+    fontWeight: 900
+  },
+
+  rewardFlavor: {
+    margin: '10px 0 0',
+    color: '#cbd5e1',
+    fontSize: '13px',
+    lineHeight: 1.45
+  },
+
+  lockedCard: {
+    minHeight: '188px',
+    borderRadius: '22px',
+    padding: '15px',
+    background: 'linear-gradient(135deg, #111827, #1e293b)',
+    color: 'white',
+    border: '1px solid #334155',
+    position: 'relative',
+    overflow: 'hidden',
+    boxShadow: 'inset 0 0 30px rgba(0,0,0,0.35)'
+  },
+
+  lockedGlow: {
+    position: 'absolute',
+    inset: 0,
+    background: 'radial-gradient(circle at center, rgba(214,179,90,0.16), transparent 58%)'
+  },
+
+  lockedIcon: {
+    position: 'relative',
+    zIndex: 1,
+    width: '54px',
+    height: '54px',
+    borderRadius: '999px',
+    background: 'rgba(255,255,255,0.08)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '30px',
+    marginBottom: '12px'
+  },
+
+  lockedTitle: {
+    position: 'relative',
+    zIndex: 1,
+    margin: '0 0 8px',
+    fontSize: '20px',
+    letterSpacing: '2px'
+  },
+
+  lockedText: {
+    position: 'relative',
+    zIndex: 1,
+    margin: 0,
+    color: '#cbd5e1',
+    fontSize: '13px',
+    lineHeight: 1.45
+  },
+
+  lockedHint: {
+    position: 'relative',
+    zIndex: 1,
+    display: 'block',
+    marginTop: '12px',
+    color: '#d6b35a',
+    fontWeight: 800
+  },
+
+  bottomNav: {
+    position: 'fixed',
+    left: '50%',
+    bottom: '14px',
+    transform: 'translateX(-50%)',
+    width: 'calc(100% - 28px)',
+    maxWidth: '398px',
+    padding: '8px',
+    borderRadius: '24px',
+    background: 'rgba(2, 6, 23, 0.94)',
+    border: '1px solid rgba(214,179,90,0.18)',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: '5px',
+    boxShadow: '0 16px 36px rgba(0,0,0,0.48)',
+    zIndex: 20
+  },
+
+  profileCard: {
+    padding: '24px',
+    borderRadius: '28px',
+    background: '#0f172a',
+    border: '1px solid rgba(214,179,90,0.18)',
+    textAlign: 'center',
+    boxShadow: '0 14px 30px rgba(0,0,0,0.32)'
+  },
+
+  profileAvatar: {
+    width: '72px',
+    height: '72px',
+    margin: '0 auto',
+    borderRadius: '24px',
+    background: 'linear-gradient(135deg, #d6b35a, #7c2d12)',
+    color: '#1c1204',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '28px',
+    fontWeight: 900
+  },
+
+  profileStatGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '12px',
+    marginTop: '16px'
+  },
+
+  profileStat: {
+    padding: '16px',
+    borderRadius: '20px',
+    background: '#0f172a',
+    border: '1px solid rgba(148,163,184,0.2)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    textAlign: 'center'
+  },
+
+  settingsBox: {
+    marginTop: '16px',
+    padding: '16px',
+    borderRadius: '22px',
+    background: '#0f172a',
+    border: '1px solid rgba(214,179,90,0.18)',
+    display: 'grid',
+    gap: '14px'
+  },
+
+  smallGoldButton: {
+    marginTop: '8px',
+    border: 0,
+    borderRadius: '999px',
+    padding: '9px 12px',
+    background: 'linear-gradient(135deg, #d6b35a, #b8892f)',
+    color: '#1c1204',
+    fontWeight: 900,
+    cursor: 'pointer'
+  },
+
+  logoutButton: {
+    width: '100%',
+    marginTop: '16px',
+    padding: '14px',
+    borderRadius: '16px',
+    border: '1px solid rgba(148,163,184,0.3)',
+    background: '#111827',
+    color: '#f8fafc',
+    fontWeight: 900,
+    cursor: 'pointer'
+  },
+
+  emptyBox: {
+    padding: '18px',
+    borderRadius: '18px',
+    background: '#0f172a',
+    border: '1px dashed #475569',
+    color: '#94a3b8'
+  },
+
+  completeBox: {
+    padding: '18px',
+    borderRadius: '18px',
+    background: 'rgba(34,197,94,0.12)',
+    border: '1px solid #22c55e',
+    color: '#86efac',
+    fontWeight: 900
+  },
+
+  errorBox: {
+    padding: '14px',
+    borderRadius: '16px',
+    background: 'rgba(239,68,68,0.12)',
+    border: '1px solid #ef4444',
+    color: '#fecaca',
+    marginBottom: '14px'
+  }
+}
